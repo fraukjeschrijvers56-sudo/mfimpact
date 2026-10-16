@@ -3,7 +3,7 @@ import { generateObject, generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 import * as cheerio from 'cheerio';
-import { getDb } from '@/lib/db';
+import { getDb, isUsingSupabase } from '@/lib/db';
 import { checkAllThresholds } from '@/lib/esg-thresholds';
 import { extractAndCheckClaims } from '@/lib/claim-check-rules';
 import { ALL_SCAN_QUESTIONS, getGapPriority, getSuggestedEvidence } from '@/lib/vsme-scan-questions';
@@ -457,20 +457,64 @@ Vul alle velden in met bronnen waar mogelijk.`,
       });
 
       // Create client in database
-      const result = db.prepare(`
-        INSERT INTO clients (naam, sector, aantal_medewerkers, omzet, balanstotaal, afnemers, kvk)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        companyData.naam,
-        companyData.sector,
-        companyData.aantal_medewerkers === 'onbekend' ? null : companyData.aantal_medewerkers,
-        companyData.omzet === 'onbekend' ? null : companyData.omzet,
-        companyData.balanstotaal === 'onbekend' ? null : companyData.balanstotaal,
-        companyData.belangrijkste_afnemers?.join(', ') || null,
-        companyData.kvk
-      );
-
-      const clientId = result.lastInsertRowid;
+      let clientId: number;
+      
+      if (isUsingSupabase()) {
+        const clientData = {
+          naam: companyData.naam,
+          sector: companyData.sector,
+          aantal_medewerkers: companyData.aantal_medewerkers === 'onbekend' ? null : companyData.aantal_medewerkers,
+          omzet: companyData.omzet === 'onbekend' ? null : companyData.omzet,
+          balanstotaal: companyData.balanstotaal === 'onbekend' ? null : companyData.balanstotaal,
+          afnemers: companyData.belangrijkste_afnemers?.join(', ') || null,
+          kvk: companyData.kvk,
+          website_url: websiteUrl.toString(),
+          plaats: city,
+        };
+        
+        const { data: client, error } = await db
+          .from('clients')
+          .insert(clientData)
+          .select('id')
+          .single();
+        
+        if (error) throw error;
+        clientId = client.id;
+        
+        // Initialize status
+        const steps = ['scan', 'gatanalyse', 'bewijspakket', 'claimcheck', 'jaarlijkse-update'];
+        const statusData = steps.map(step => ({
+          client_id: clientId,
+          stap: step,
+          status: 'nog-niet-gestart'
+        }));
+        await db.from('client_status').insert(statusData);
+        
+      } else {
+        const result = db.prepare(`
+          INSERT INTO clients (naam, sector, aantal_medewerkers, omzet, balanstotaal, afnemers, kvk)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          companyData.naam,
+          companyData.sector,
+          companyData.aantal_medewerkers === 'onbekend' ? null : companyData.aantal_medewerkers,
+          companyData.omzet === 'onbekend' ? null : companyData.omzet,
+          companyData.balanstotaal === 'onbekend' ? null : companyData.balanstotaal,
+          companyData.belangrijkste_afnemers?.join(', ') || null,
+          companyData.kvk
+        );
+        clientId = result.lastInsertRowid as number;
+        
+        // Initialize status
+        const steps = ['scan', 'gatanalyse', 'bewijspakket', 'claimcheck', 'jaarlijkse-update'];
+        const statusStmt = db.prepare(`
+          INSERT INTO client_status (client_id, stap, status)
+          VALUES (?, ?, ?)
+        `);
+        for (const step of steps) {
+          statusStmt.run(clientId, step, 'nog-niet-gestart');
+        }
+      }
 
       return NextResponse.json({ 
         success: true,

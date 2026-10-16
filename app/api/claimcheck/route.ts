@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, isUsingSupabase } from '@/lib/db';
 import { checkClaim } from '@/lib/claimcheck-rules';
 
 export async function POST(request: Request) {
@@ -20,16 +20,29 @@ export async function POST(request: Request) {
     // Save to database if client is selected
     if (client_id) {
       const db = getDb();
-      db.prepare(`
-        INSERT INTO claim_checks (client_id, claim_text, result, risks, suggestions)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(
-        client_id,
-        claim_text,
-        checkResult.overallResult,
-        JSON.stringify(checkResult.risks),
-        suggestions
-      );
+      
+      if (isUsingSupabase()) {
+        const { error } = await db.from('claimcheck').insert({
+          client_id: parseInt(client_id),
+          claim_text,
+          result: checkResult.overallResult,
+          risks: JSON.stringify(checkResult.risks),
+          suggestions
+        });
+        if (error) throw error;
+        
+      } else {
+        db.prepare(`
+          INSERT INTO claim_checks (client_id, claim_text, result, risks, suggestions)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(
+          client_id,
+          claim_text,
+          checkResult.overallResult,
+          JSON.stringify(checkResult.risks),
+          suggestions
+        );
+      }
     }
 
     return NextResponse.json({

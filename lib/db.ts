@@ -1,4 +1,6 @@
-// Conditional imports - use in-memory for Vercel, SQLite for local
+// Conditional imports - use Supabase on Vercel, SQLite for local
+import { isSupabaseConfigured, getSupabaseClient } from './supabase';
+
 let Database: any;
 let db: any = null;
 
@@ -7,12 +9,15 @@ const isVercel = process.env.VERCEL === '1' || process.env.NEXT_PUBLIC_VERCEL_EN
 
 export function getDb() {
   if (!db) {
-    if (isVercel) {
-      // Use in-memory database on Vercel
-      const { MemoryDatabase } = require('./db-memory');
-      db = new MemoryDatabase();
-    } else {
-      // Use SQLite locally
+    // Priority 1: Use Supabase if configured (production)
+    if (isSupabaseConfigured()) {
+      console.log('Using Supabase database');
+      db = getSupabaseClient();
+      return db;
+    }
+    
+    // Priority 2: Use SQLite locally
+    if (!isVercel) {
       try {
         Database = require('better-sqlite3');
         const { join } = require('path');
@@ -24,15 +29,23 @@ export function getDb() {
         const dbPath = join(dataDir, 'mvo.db');
         db = new Database(dbPath);
         initDb(db);
+        console.log('Using local SQLite database');
+        return db;
       } catch (error) {
-        // Fallback to in-memory if SQLite fails
-        console.warn('SQLite unavailable, using in-memory database');
-        const { MemoryDatabase } = require('./db-memory');
-        db = new MemoryDatabase();
+        console.warn('SQLite unavailable');
       }
     }
+    
+    // Fallback: Use in-memory (NOT persistent, only for emergency)
+    console.warn('FALLBACK: Using in-memory database - data will NOT persist!');
+    const { MemoryDatabase } = require('./db-memory');
+    db = new MemoryDatabase();
   }
   return db;
+}
+
+export function isUsingSupabase(): boolean {
+  return isSupabaseConfigured();
 }
 
 function initDb(db: any) {

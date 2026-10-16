@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, isUsingSupabase } from '@/lib/db';
 import * as XLSX from 'xlsx';
 
 export async function GET(
@@ -13,20 +13,43 @@ export async function GET(
     
     const db = getDb();
     
-    // Get client data
-    const client = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId) as any;
-    if (!client) {
-      return NextResponse.json({ error: 'Client niet gevonden' }, { status: 404 });
+    let client: any;
+    let scanAnswers: any[];
+    let gaps: any[];
+    let claims: any[];
+    
+    if (isUsingSupabase()) {
+      // Supabase async queries
+      const { data: clientData, error: clientError } = await db
+        .from('clients')
+        .select('*')
+        .eq('id', clientId)
+        .single();
+      if (clientError || !clientData) {
+        return NextResponse.json({ error: 'Client niet gevonden' }, { status: 404 });
+      }
+      client = clientData;
+      
+      const { data: scanData } = await db.from('scan_answers').select('*').eq('client_id', clientId);
+      scanAnswers = scanData || [];
+      
+      const { data: gapsData } = await db.from('gap_items').select('*').eq('client_id', clientId);
+      gaps = gapsData || [];
+      
+      const { data: claimsData } = await db.from('claimcheck').select('*').eq('client_id', clientId);
+      claims = claimsData || [];
+      
+    } else {
+      // SQLite/in-memory sync queries
+      client = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId) as any;
+      if (!client) {
+        return NextResponse.json({ error: 'Client niet gevonden' }, { status: 404 });
+      }
+      
+      scanAnswers = db.prepare('SELECT * FROM scan_answers WHERE client_id = ?').all(clientId) as any[];
+      gaps = db.prepare('SELECT * FROM gap_items WHERE client_id = ?').all(clientId) as any[];
+      claims = db.prepare('SELECT * FROM claimcheck WHERE client_id = ?').all(clientId) as any[];
     }
-    
-    // Get scan answers
-    const scanAnswers = db.prepare('SELECT * FROM scan_answers WHERE client_id = ?').all(clientId) as any[];
-    
-    // Get gaps
-    const gaps = db.prepare('SELECT * FROM gap_items WHERE client_id = ?').all(clientId) as any[];
-    
-    // Get claims
-    const claims = db.prepare('SELECT * FROM claimcheck WHERE client_id = ?').all(clientId) as any[];
     
     // Prepare data sheets
     const clientSheet = [

@@ -1,25 +1,36 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, isUsingSupabase } from '@/lib/db';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const db = getDb();
+    const usingSupabase = isUsingSupabase();
 
     // Get scan answers
-    const answers = db.prepare('SELECT * FROM scan_answers WHERE client_id = ?').all(id) as any[];
+    let answers: any[];
+    if (usingSupabase) {
+      const { data, error } = await db
+        .from('scan_answers')
+        .select('*')
+        .eq('client_id', id);
+      if (error) throw error;
+      answers = data || [];
+    } else {
+      answers = db.prepare('SELECT * FROM scan_answers WHERE client_id = ?').all(id) as any[];
+    }
+    
     const answerMap: Record<string, string> = {};
     answers.forEach(a => {
       answerMap[`${a.category}_${a.question_key}`] = a.answer;
     });
 
     // Delete existing gaps for this client
-    db.prepare('DELETE FROM gap_items WHERE client_id = ?').run(id);
-
-    const insertGap = db.prepare(`
-      INSERT INTO gap_items (client_id, gap_title, priority, suggested_evidence, status)
-      VALUES (?, ?, ?, ?, 'open')
-    `);
+    if (usingSupabase) {
+      await db.from('gap_items').delete().eq('client_id', id);
+    } else {
+      db.prepare('DELETE FROM gap_items WHERE client_id = ?').run(id);
+    }
 
     // Generate gaps based on answers
     const gaps: Array<{ title: string; priority: string; evidence: string }> = [];
@@ -122,16 +133,48 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     // Insert all gaps
-    for (const gap of gaps) {
-      insertGap.run(id, gap.title, gap.priority, gap.evidence);
-    }
+    if (usingSupabase) {
+      if (gaps.length > 0) {
+        const gapsData = gaps.map(gap => ({
+          client_id: parseInt(id),
+          gap_title: gap.title,
+          priority: gap.priority,
+          suggested_evidence: gap.evidence,
+          status: 'open'
+        }));
+        const { error } = await db.from('gap_items').insert(gapsData);
+        if (error) throw error;
+      }
+      
+      // Update status
+      const { error: statusError } = await db
+        .from('client_status')
+        .update({ 
+          status: 'voltooid', 
+          notitie: `Gatanalyse voltooid op ${new Date().toISOString()}`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('client_id', id)
+        .eq('stap', 'gatanalyse');
+      if (statusError) throw statusError;
+      
+    } else {
+      const insertGap = db.prepare(`
+        INSERT INTO gap_items (client_id, gap_title, priority, suggested_evidence, status)
+        VALUES (?, ?, ?, ?, 'open')
+      `);
+      
+      for (const gap of gaps) {
+        insertGap.run(id, gap.title, gap.priority, gap.evidence);
+      }
 
-    // Update status to in-behandeling
-    db.prepare(`
-      UPDATE client_status 
-      SET status = 'voltooid', notitie = 'Gatanalyse voltooid op ' || datetime('now'), updated_at = datetime('now')
-      WHERE client_id = ? AND stap = 'gatanalyse'
-    `).run(id);
+      // Update status to in-behandeling
+      db.prepare(`
+        UPDATE client_status 
+        SET status = 'voltooid', notitie = 'Gatanalyse voltooid op ' || datetime('now'), updated_at = datetime('now')
+        WHERE client_id = ? AND stap = 'gatanalyse'
+      `).run(id);
+    }
 
     return NextResponse.json({ success: true, gapsGenerated: gaps.length });
   } catch (error) {
