@@ -64,11 +64,17 @@ export default function NieuweKlantPage() {
       });
 
       if (!extractRes.ok) {
-        const err = await extractRes.json();
+        let err;
+        try {
+          err = await extractRes.json();
+        } catch (jsonErr) {
+          console.error('Failed to parse error response:', jsonErr);
+          err = { error: `HTTP ${extractRes.status}: ${extractRes.statusText}`, step: 'extracting' };
+        }
         const errorMsg = err.error || 'Analyse mislukt';
         const failedStep = err.step || 'extracting';
         console.error(`Analysis failed at step ${failedStep}:`, errorMsg, err.details);
-        throw new Error(`Fout bij ${failedStep}: ${errorMsg}`);
+        throw new Error(`Stap '${failedStep}': ${errorMsg}`);
       }
 
       const extractData = await extractRes.json();
@@ -97,8 +103,11 @@ export default function NieuweKlantPage() {
           body: JSON.stringify({ url, city, step: 'scan', clientId: cId }),
         });
         if (!scanRes.ok) {
-          const err = await scanRes.json();
-          console.error('Scan step failed (continuing):', err);
+          let err;
+          try {
+            err = await scanRes.json();
+          } catch { err = { error: `HTTP ${scanRes.status}` }; }
+          console.error('Scan step failed (continuing):', err.error || err);
         }
       } catch (scanErr) {
         console.error('Scan step error (continuing):', scanErr);
@@ -113,8 +122,11 @@ export default function NieuweKlantPage() {
           body: JSON.stringify({ url, city, step: 'threshold', clientId: cId }),
         });
         if (!thresholdRes.ok) {
-          const err = await thresholdRes.json();
-          console.error('Threshold step failed (continuing):', err);
+          let err;
+          try {
+            err = await thresholdRes.json();
+          } catch { err = { error: `HTTP ${thresholdRes.status}` }; }
+          console.error('Threshold step failed (continuing):', err.error || err);
         }
       } catch (thresholdErr) {
         console.error('Threshold step error (continuing):', thresholdErr);
@@ -129,8 +141,11 @@ export default function NieuweKlantPage() {
           body: JSON.stringify({ url, city, step: 'claims', clientId: cId }),
         });
         if (!claimsRes.ok) {
-          const err = await claimsRes.json();
-          console.error('Claims step failed (continuing):', err);
+          let err;
+          try {
+            err = await claimsRes.json();
+          } catch { err = { error: `HTTP ${claimsRes.status}` }; }
+          console.error('Claims step failed (continuing):', err.error || err);
         }
       } catch (claimsErr) {
         console.error('Claims step error (continuing):', claimsErr);

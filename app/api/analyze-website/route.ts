@@ -173,7 +173,9 @@ Geef elk feit met bron-URL. Als niet gevonden: vermeld dat expliciet.`,
 
 export async function POST(request: NextRequest) {
   try {
-    const { url, city, step } = await request.json();
+    // Parse body ONCE at the top - cannot read request.json() multiple times
+    const body = await request.json();
+    const { url, city, step, clientId } = body;
 
     if (!url) {
       return NextResponse.json({ error: 'URL is verplicht' }, { status: 400 });
@@ -272,9 +274,8 @@ Output per veld met *_source URL:
 
     // Step 4: MVO scan & gap analysis (VSME B1-B11 + extra)
     if (step === 'scan') {
-      const { clientId } = await request.json();
       if (!clientId) {
-        return NextResponse.json({ error: 'Client ID verplicht' }, { status: 400 });
+        return NextResponse.json({ error: 'Client ID verplicht voor scan stap' }, { status: 400 });
       }
 
       // Use deep crawl for comprehensive scan
@@ -359,10 +360,8 @@ Geef in JSON formaat:
 
     // Step 5: Threshold check
     if (step === 'threshold') {
-      const { clientId } = await request.json();
-      
       if (!clientId) {
-        return NextResponse.json({ error: 'Client ID verplicht' }, { status: 400 });
+        return NextResponse.json({ error: 'Client ID verplicht voor threshold stap' }, { status: 400 });
       }
 
       const client = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId) as any;
@@ -386,7 +385,9 @@ Geef in JSON formaat:
 
     // Step 6: Claim check (ECGT + ACM)
     if (step === 'claims') {
-      const { clientId } = await request.json();
+      if (!clientId) {
+        return NextResponse.json({ error: 'Client ID verplicht voor claims stap' }, { status: 400 });
+      }
       
       // Use deep crawl for comprehensive claim detection
       const crawlData = await deepCrawlWebsite(websiteUrl.toString());
