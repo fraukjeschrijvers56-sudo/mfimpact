@@ -60,20 +60,22 @@ De MVO-bewijs werkbank ondersteunt het volledige proces van ESG/MVO-dienstverlen
 ## Database
 
 ### Lokale ontwikkeling
-De applicatie gebruikt SQLite voor lokale ontwikkeling. De database wordt automatisch aangemaakt in de `data/` directory bij de eerste start. Voorbeelddata (demo klant en wetgeving) wordt automatisch ingevoegd.
+De applicatie gebruikt **SQLite** voor lokale ontwikkeling wanneer `better-sqlite3` beschikbaar is. De database wordt automatisch aangemaakt in de `data/` directory bij de eerste start.
 
 ### Productie (Vercel)
-Voor deployment op Vercel kun je verschillende database-opties gebruiken:
+De applicatie detecteert automatisch of het draait op Vercel (via `VERCEL` environment variabele) en schakelt dan over naar een **in-memory database**. Dit betekent:
+- ✅ Geen native modules nodig (werkt direct op Vercel serverless)
+- ✅ Demo data wordt automatisch ingeladen (1 voorbeeldklant + 16 wetgeving items)
+- ⚠️ Data is **niet persistent** tussen requests (elke cold start reset de data)
+- 💡 Voor productie met persistente data: implementeer Vercel Postgres of andere serverless database
 
-#### Optie 1: Vercel Postgres (aanbevolen)
-1. Maak een Vercel Postgres database aan in je project
-2. De environment variabelen worden automatisch toegevoegd
-3. Update `lib/db.ts` om Vercel Postgres te gebruiken in productie
+De in-memory oplossing is perfect voor **demo doeleinden** en laat alle functionaliteit zien.
 
-#### Optie 2: Upstash Redis of andere providers
-Je kunt ook andere databases gebruiken die compatibel zijn met Vercel's serverless omgeving.
-
-**Let op**: Voor productie moet je de database-logica aanpassen om met een serverless-vriendelijke database te werken. De huidige SQLite implementatie is vooral bedoeld voor lokale ontwikkeling.
+### Voor productie met persistente data
+Als je persistente data nodig hebt:
+1. Maak een Vercel Postgres database aan
+2. Update `lib/db.ts` om de database te gebruiken
+3. Run migrations om schema's aan te maken
 
 ## Deployment op Vercel
 

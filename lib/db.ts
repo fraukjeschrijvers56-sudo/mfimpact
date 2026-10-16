@@ -1,18 +1,41 @@
-import Database from 'better-sqlite3';
-import { join } from 'path';
+// Conditional imports - use in-memory for Vercel, SQLite for local
+let Database: any;
+let db: any = null;
 
-let db: Database.Database | null = null;
+// Check if we're on Vercel or if better-sqlite3 is unavailable
+const isVercel = process.env.VERCEL === '1' || process.env.NEXT_PUBLIC_VERCEL_ENV;
 
 export function getDb() {
   if (!db) {
-    const dbPath = join(process.cwd(), 'data', 'mvo.db');
-    db = new Database(dbPath);
-    initDb(db);
+    if (isVercel) {
+      // Use in-memory database on Vercel
+      const { MemoryDatabase } = require('./db-memory');
+      db = new MemoryDatabase();
+    } else {
+      // Use SQLite locally
+      try {
+        Database = require('better-sqlite3');
+        const { join } = require('path');
+        const { mkdirSync, existsSync } = require('fs');
+        const dataDir = join(process.cwd(), 'data');
+        if (!existsSync(dataDir)) {
+          mkdirSync(dataDir, { recursive: true });
+        }
+        const dbPath = join(dataDir, 'mvo.db');
+        db = new Database(dbPath);
+        initDb(db);
+      } catch (error) {
+        // Fallback to in-memory if SQLite fails
+        console.warn('SQLite unavailable, using in-memory database');
+        const { MemoryDatabase } = require('./db-memory');
+        db = new MemoryDatabase();
+      }
+    }
   }
   return db;
 }
 
-function initDb(db: Database.Database) {
+function initDb(db: any) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS clients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,81 +124,12 @@ function initDb(db: Database.Database) {
   `);
 }
 
-export interface Client {
-  id?: number;
-  naam: string;
-  kvk?: string;
-  sector?: string;
-  aantal_medewerkers?: number;
-  omzet?: number;
-  balanstotaal?: number;
-  afnemers?: string;
-  banken?: string;
-  tenders?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface ClientStatus {
-  id?: number;
-  client_id: number;
-  stap: string;
-  status: string;
-  notitie?: string;
-  updated_at?: string;
-}
-
-export interface EvidenceItem {
-  id?: number;
-  client_id: number;
-  titel: string;
-  type: string;
-  link_notitie?: string;
-  datum?: string;
-  geldig_tot?: string;
-  created_at?: string;
-}
-
-export interface ScanAnswer {
-  id?: number;
-  client_id: number;
-  category: string;
-  question_key: string;
-  answer?: string;
-  updated_at?: string;
-}
-
-export interface GapItem {
-  id?: number;
-  client_id: number;
-  gap_title: string;
-  priority: string;
-  suggested_evidence?: string;
-  status?: string;
-  created_at?: string;
-}
-
-export interface Legislation {
-  id?: number;
-  naam: string;
-  type: string;
-  niveau: string;
-  status: string;
-  peildatum?: string;
-  drempels?: string;
-  doorwerking?: string;
-  bronlink?: string;
-  te_verifieren?: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface ClaimCheck {
-  id?: number;
-  client_id: number;
-  claim_text: string;
-  result: string;
-  risks?: string;
-  suggestions?: string;
-  created_at?: string;
-}
+export type {
+  Client,
+  ClientStatus,
+  EvidenceItem,
+  ScanAnswer,
+  GapItem,
+  Legislation,
+  ClaimCheck,
+} from './db-types';
