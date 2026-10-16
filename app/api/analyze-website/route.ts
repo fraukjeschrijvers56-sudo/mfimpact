@@ -8,58 +8,177 @@ import { checkAllThresholds } from '@/lib/esg-thresholds';
 import { extractAndCheckClaims } from '@/lib/claim-check-rules';
 import { ALL_SCAN_QUESTIONS, getGapPriority, getSuggestedEvidence } from '@/lib/vsme-scan-questions';
 
-// Schema for company data extraction - NOOIT verzinnen, gebruik "onbekend"
+// Vercel function timeout
+export const maxDuration = 300; // 5 minutes
+
+// Evidence schema - every field needs source
+const EvidenceSchema = z.object({
+  value: z.union([z.string(), z.number(), z.array(z.string()), z.literal('onbekend')]).nullable(),
+  source_url: z.string().nullable(),
+  quote: z.string().nullable(),
+});
+
+// Schema for company data extraction with sources
 // All properties REQUIRED for OpenAI strict mode - use null/empty for missing data
 const CompanyDataSchema = z.object({
   naam: z.string(),
   kvk: z.string().nullable(),
+  kvk_source: z.string().nullable(),
   sector: z.string(),
+  sector_source: z.string().nullable(),
   aantal_medewerkers: z.union([z.number(), z.literal('onbekend')]),
+  aantal_medewerkers_source: z.string().nullable(),
+  aantal_medewerkers_quote: z.string().nullable(),
   omzet: z.union([z.number(), z.literal('onbekend')]),
+  omzet_source: z.string().nullable(),
   balanstotaal: z.union([z.number(), z.literal('onbekend')]),
   belangrijkste_afnemers: z.array(z.string()).nullable(),
+  afnemers_source: z.string().nullable(),
   producten: z.array(z.string()).nullable(),
+  producten_source: z.string().nullable(),
+  certificaten: z.array(z.string()).nullable(),
+  certificaten_source: z.string().nullable(),
   beschrijving: z.string().nullable(),
   confidence: z.enum(['hoog', 'middel', 'laag']),
 });
 
-async function fetchWebsiteContent(url: string): Promise<string> {
+async function fetchPageContent(url: string, timeoutMs: number = 8000): Promise<{ content: string; url: string } | null> {
   try {
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       },
-      signal: AbortSignal.timeout(10000)
+      signal: AbortSignal.timeout(timeoutMs)
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    if (!response.ok) return null;
 
     const html = await response.text();
     const $ = cheerio.load(html);
     
     // Remove script, style, and navigation elements
-    $('script, style, nav, footer, header').remove();
+    $('script, style, nav, header').remove();
     
     // Extract main text content
     const text = $('body').text()
       .replace(/\s+/g, ' ')
       .trim()
-      .slice(0, 8000); // Limit to 8000 chars
+      .slice(0, 10000);
     
-    return text;
+    return { content: text, url };
   } catch (error) {
-    throw new Error(`Website ophalen mislukt: ${error instanceof Error ? error.message : 'Onbekende fout'}`);
+    return null;
+  }
+}
+
+async function deepCrawlWebsite(baseUrl: string): Promise<{ pages: Array<{ url: string; content: string }>; totalContent: string }> {
+  const urlObj = new URL(baseUrl);
+  const origin = urlObj.origin;
+  
+  // Common pages to check
+  const pathsToTry = [
+    '/',
+    '/over-ons',
+    '/about',
+    '/about-us',
+    '/duurzaamheid',
+    '/sustainability',
+    '/mvo',
+    '/esg',
+    '/csr',
+    '/vacatures',
+    '/careers',
+    '/jobs',
+    '/contact',
+    '/algemene-voorwaarden',
+    '/terms',
+    '/privacy',
+    '/sitemap.xml',
+  ];
+  
+  const urlsToFetch = pathsToTry.map(path => `${origin}${path}`);
+  
+  // Parallel fetch with timeout
+  const results = await Promise.all(
+    urlsToFetch.map(url => fetchPageContent(url, 6000))
+  );
+  
+  const pages = results.filter((r): r is { content: string; url: string } => r !== null && r.content.length > 100);
+  
+  // Combine all content
+  const totalContent = pages.map(p => `[${p.url}]\n${p.content}`).join('\n\n---\n\n').slice(0, 50000);
+  
+  return { pages, totalContent };
+}
+
+async function researchCompanyWithWebSearch(companyName: string, city: string): Promise<string> {
+  if (!process.env.OPENAI_API_KEY) {
+    return 'Web search niet beschikbaar (geen API key)';
+  }
+
+  try {
+    // Use OpenAI with web_search tool (Responses API)
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: `Onderzoek dit Nederlandse bedrijf en geef ALLEEN feiten met bronnen:
+
+Bedrijf: ${companyName}
+Locatie: ${city}
+
+Zoek naar:
+1. KvK-nummer (uit KvK register of bedrijfsprofiel)
+2. Aantal medewerkers/FTE (LinkedIn, werkenbij.nl, bedrijfsprofiel, nieuwsartikelen)
+3. Sector/SBI-code
+4. Certificaten: ISO 14001, EcoVadis score, B Corp, CO2-Prestatieladder niveau, SBTi commitment
+5. Belangrijkste klanten/afnemers
+6. Producten (vooral: soja, palmolie, rundvee, cacao, koffie, rubber, hout, staal, aluminium, cement voor EUDR/CBAM)
+7. Relevante ESG/duurzaamheid nieuws
+
+Geef elk feit met bron-URL. Als niet gevonden: vermeld dat expliciet.`,
+          }
+        ],
+        tools: [
+          {
+            type: 'web_search_preview'
+          }
+        ],
+        temperature: 0.1,
+      }),
+      signal: AbortSignal.timeout(45000), // 45 sec timeout
+    });
+
+    if (!response.ok) {
+      return `Web search error: ${response.status}`;
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || 'Geen resultaten';
+    
+  } catch (error) {
+    console.error('Web search error:', error);
+    return `Web search mislukt: ${error instanceof Error ? error.message : 'Onbekend'}`;
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { url, step } = await request.json();
+    const { url, city, step } = await request.json();
 
     if (!url) {
       return NextResponse.json({ error: 'URL is verplicht' }, { status: 400 });
+    }
+    
+    if (!city) {
+      return NextResponse.json({ error: 'Hoofdvestigingsplaats is verplicht' }, { status: 400 });
     }
 
     // Validate and normalize URL
@@ -72,54 +191,92 @@ export async function POST(request: NextRequest) {
 
     const db = getDb();
 
-    // Step 1: Fetch website content
-    if (step === 'fetch') {
-      const content = await fetchWebsiteContent(websiteUrl.toString());
+    // Step 1: Deep crawl website
+    if (step === 'crawl') {
+      const crawlData = await deepCrawlWebsite(websiteUrl.toString());
       return NextResponse.json({ 
         success: true, 
-        content: content.slice(0, 1000) + '...',
-        contentLength: content.length 
+        pagesFound: crawlData.pages.length,
+        urls: crawlData.pages.map(p => p.url),
+        contentLength: crawlData.totalContent.length
       });
     }
 
-    // Step 2: Extract company data
-    if (step === 'extract') {
-      const content = await fetchWebsiteContent(websiteUrl.toString());
+    // Step 2: Web search research
+    if (step === 'research') {
+      // Get company name from URL or use domain
+      const companyName = websiteUrl.hostname.replace('www.', '').split('.')[0];
+      const researchResults = await researchCompanyWithWebSearch(companyName, city);
       
+      return NextResponse.json({ 
+        success: true, 
+        research: researchResults.slice(0, 2000) + '...' 
+      });
+    }
+
+    // Step 3: Extract company data (deep analysis with sources)
+    if (step === 'extract') {
+      // Deep crawl
+      const crawlData = await deepCrawlWebsite(websiteUrl.toString());
+      
+      // Web search
+      const companyName = websiteUrl.hostname.replace('www.', '').split('.')[0];
+      const webResearch = await researchCompanyWithWebSearch(companyName, city);
+      
+      // Combined analysis
       const { object: companyData } = await generateObject({
         model: openai('gpt-4o-mini'),
         schema: CompanyDataSchema,
-        prompt: `Analyseer deze website en extraheer ALLEEN feiten die EXPLICIET vermeld worden.
+        prompt: `Analyseer deze data en extraheer bedrijfsgegevens met bronnen.
 
+Bedrijf: ${companyName}
+Stad: ${city}
 Website: ${websiteUrl.toString()}
-Content: ${content}
 
-KRITISCH: NOOIT aantallen verzinnen! Gebruik null voor ontbrekende arrays/strings.
-- aantal_medewerkers: alleen als expliciet vermeld (bijv. "50 medewerkers", "team van 12"), anders "onbekend"
-- omzet: alleen als expliciet vermeld in jaarverslag/cijfers, anders "onbekend"  
-- balanstotaal: alleen als expliciet vermeld, anders "onbekend"
-- kvk: zoek in footer, algemene voorwaarden, of "KvK" vermelding, anders null
-- sector: gok SBI-code sector op basis van producten/diensten
-- producten: array van producten voor EUDR/CBAM check (soja, palmolie, rundvee, cacao, koffie, rubber, hout, staal, aluminium, cement), of null als onbekend
-- belangrijkste_afnemers: array van klantgroepen (bijv. ["gemeenten", "bouwbedrijven", "consumenten"]), of null als onbekend
-- beschrijving: korte omschrijving bedrijf, of null
-- confidence: 'hoog' als veel cijfers gevonden, 'middel' als sector duidelijk, 'laag' als weinig info`,
+WEBSITE CONTENT (meerdere pagina's):
+${crawlData.totalContent}
+
+WEB RESEARCH:
+${webResearch}
+
+KRITISCH - Regels:
+1. NOOIT getallen verzinnen! Gebruik "onbekend" als niet gevonden.
+2. Elk gegeven MOET een bron hebben (URL waar het vandaan komt).
+3. Voor aantal_medewerkers: geef bron + citaat (bijv. "50 medewerkers" van LinkedIn)
+4. Voor omzet: alleen als expliciet vermeld, anders "onbekend" (niet belangrijk voor drempelcheck)
+5. Voor KvK: zoek in footer, algemene voorwaarden, KvK register, of null
+6. Certificaten: ISO 14001, EcoVadis, B Corp, CO2-Prestatieladder, SBTi
+
+Output per veld met *_source URL:
+- naam: bedrijfsnaam
+- kvk: nummer of null, kvk_source: URL
+- sector: SBI-sector, sector_source: URL
+- aantal_medewerkers: aantal of "onbekend", aantal_medewerkers_source: URL, aantal_medewerkers_quote: citaat
+- omzet: bedrag of "onbekend", omzet_source: URL (niet kritisch)
+- balanstotaal: bedrag of "onbekend"
+- belangrijkste_afnemers: array of null, afnemers_source: URL
+- producten: array (EUDR/CBAM: soja, palmolie, rundvee, cacao, koffie, rubber, hout, staal, aluminium, cement) of null, producten_source: URL
+- certificaten: array of null, certificaten_source: URL
+- beschrijving: tekst of null
+- confidence: hoog/middel/laag`,
       });
 
       return NextResponse.json({ 
         success: true, 
-        companyData 
+        companyData,
+        pagesAnalyzed: crawlData.pages.length
       });
     }
 
-    // Step 3: MVO scan & gap analysis (VSME B1-B11 + extra)
+    // Step 4: MVO scan & gap analysis (VSME B1-B11 + extra)
     if (step === 'scan') {
       const { clientId } = await request.json();
       if (!clientId) {
         return NextResponse.json({ error: 'Client ID verplicht' }, { status: 400 });
       }
 
-      const content = await fetchWebsiteContent(websiteUrl.toString());
+      // Use deep crawl for comprehensive scan
+      const crawlData = await deepCrawlWebsite(websiteUrl.toString());
       
       // Scan each VSME question
       const scanResults = [];
@@ -128,18 +285,19 @@ KRITISCH: NOOIT aantallen verzinnen! Gebruik null voor ontbrekende arrays/string
       for (const q of ALL_SCAN_QUESTIONS) {
         const result = await generateText({
           model: openai('gpt-4o-mini'),
-          prompt: `Beoordeel deze vraag voor het bedrijf op basis van hun website:
+          prompt: `Beoordeel deze vraag voor het bedrijf op basis van hun website (meerdere pagina's):
 
 Vraag: ${q.question}
 Categorie: ${q.category}
 
-Website content: ${content.slice(0, 3000)}
+Website content (gecombineerd):
+${crawlData.totalContent.slice(0, 5000)}
 
 Geef in JSON formaat:
 {
   "gevonden": true/false,
   "bewijs": "citaat van de website of 'Niet gevonden'",
-  "bron_url": "URL waar het staat, of null",
+  "bron_url": "URL waar het staat (een van de gecrawlde pagina's), of null",
   "opmerkingen": "extra context"
 }`,
         });
@@ -197,7 +355,7 @@ Geef in JSON formaat:
       });
     }
 
-    // Step 4: Threshold check
+    // Step 5: Threshold check
     if (step === 'threshold') {
       const { clientId } = await request.json();
       
@@ -224,13 +382,15 @@ Geef in JSON formaat:
       });
     }
 
-    // Step 5: Claim check (ECGT + ACM)
+    // Step 6: Claim check (ECGT + ACM)
     if (step === 'claims') {
       const { clientId } = await request.json();
-      const content = await fetchWebsiteContent(websiteUrl.toString());
+      
+      // Use deep crawl for comprehensive claim detection
+      const crawlData = await deepCrawlWebsite(websiteUrl.toString());
       
       // Use claim-check-rules module
-      const claimResults = extractAndCheckClaims(content, websiteUrl.toString());
+      const claimResults = extractAndCheckClaims(crawlData.totalContent, websiteUrl.toString());
 
       // Store in database
       if (clientId) {
@@ -260,29 +420,40 @@ Geef in JSON formaat:
       });
     }
 
-    // Full analysis (all steps combined - for progress UI)
+    // Full analysis (all steps combined with deep research)
     if (step === 'full') {
-      const content = await fetchWebsiteContent(websiteUrl.toString());
+      // Deep crawl
+      const crawlData = await deepCrawlWebsite(websiteUrl.toString());
       
-      // Extract company data (NEVER invent numbers!)
+      // Web search
+      const companyName = websiteUrl.hostname.replace('www.', '').split('.')[0];
+      const webResearch = await researchCompanyWithWebSearch(companyName, city);
+      
+      // Extract company data with sources
       const { object: companyData } = await generateObject({
         model: openai('gpt-4o-mini'),
         schema: CompanyDataSchema,
-        prompt: `Analyseer deze website en extraheer ALLEEN expliciete feiten:
+        prompt: `DEEP ANALYSIS met bronvermelding.
 
+Bedrijf: ${companyName}
+Stad: ${city}
 Website: ${websiteUrl.toString()}
-Content: ${content}
 
-KRITISCH: Gebruik "onbekend" voor getallen, null voor ontbrekende tekst/arrays.
-- aantal_medewerkers: alleen als vermeld, anders "onbekend"
-- omzet: alleen als vermeld in cijfers, anders "onbekend"
-- balanstotaal: alleen als vermeld, anders "onbekend"
-- kvk: zoek in footer/algemene voorwaarden, null als niet gevonden
-- sector: gok SBI op basis van activiteiten
-- belangrijkste_afnemers: array van klantgroepen, of null als onbekend
-- producten: array van producten voor EUDR/CBAM check (soja, palmolie, rundvee, cacao, koffie, rubber, hout, staal, aluminium, cement), of null
-- beschrijving: korte omschrijving, of null
-- confidence: hoog/middel/laag`,
+WEBSITE CONTENT (${crawlData.pages.length} pagina's):
+${crawlData.totalContent}
+
+WEB RESEARCH RESULTS:
+${webResearch}
+
+REGELS:
+1. NOOIT getallen verzinnen - gebruik "onbekend"
+2. Elk veld moet een *_source URL hebben
+3. aantal_medewerkers: met source + quote (LinkedIn, werkenbij.nl, nieuws)
+4. omzet: NIET belangrijk, mag "onbekend" zijn
+5. KvK: uit footer, voorwaarden, of KvK register
+6. certificaten: ISO 14001, EcoVadis, B Corp, CO2-Prestatieladder, SBTi
+
+Vul alle velden in met bronnen waar mogelijk.`,
       });
 
       // Create client in database
@@ -306,7 +477,9 @@ KRITISCH: Gebruik "onbekend" voor getallen, null voor ontbrekende tekst/arrays.
         clientId,
         companyData,
         websiteUrl: websiteUrl.toString(),
-        needsConfirmation: companyData.aantal_medewerkers === 'onbekend' || companyData.omzet === 'onbekend'
+        pagesAnalyzed: crawlData.pages.length,
+        // Only confirm if FTE is missing (omzet not important)
+        needsConfirmation: companyData.aantal_medewerkers === 'onbekend'
       });
     }
 
