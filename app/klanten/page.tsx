@@ -1,16 +1,41 @@
 import MainLayout from '../components/MainLayout';
 import Link from 'next/link';
-import { getDb } from '@/lib/db';
+import { getDb, isUsingSupabase } from '@/lib/db';
 
-export default function KlantenPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function KlantenPage() {
   const db = getDb();
-  const clients = db.prepare(`
-    SELECT c.*, 
-      (SELECT COUNT(*) FROM evidence_items WHERE client_id = c.id) as evidence_count,
-      (SELECT COUNT(*) FROM gap_items WHERE client_id = c.id AND status = 'open') as open_gaps
-    FROM clients c
-    ORDER BY c.updated_at DESC
-  `).all();
+  let clients: any[];
+  
+  if (isUsingSupabase()) {
+    // Supabase async query with joined counts
+    const { data } = await db
+      .from('clients')
+      .select(`
+        *,
+        evidence_items (count),
+        gap_items (count)
+      `)
+      .order('updated_at', { ascending: false });
+    
+    // Transform Supabase result to match SQLite structure
+    clients = (data || []).map((c: any) => ({
+      ...c,
+      evidence_count: c.evidence_items?.[0]?.count || 0,
+      open_gaps: c.gap_items?.filter((g: any) => g.status === 'open').length || 0
+    }));
+    
+  } else {
+    // SQLite sync query
+    clients = db.prepare(`
+      SELECT c.*, 
+        (SELECT COUNT(*) FROM evidence_items WHERE client_id = c.id) as evidence_count,
+        (SELECT COUNT(*) FROM gap_items WHERE client_id = c.id AND status = 'open') as open_gaps
+      FROM clients c
+      ORDER BY c.updated_at DESC
+    `).all();
+  }
 
   return (
     <MainLayout>

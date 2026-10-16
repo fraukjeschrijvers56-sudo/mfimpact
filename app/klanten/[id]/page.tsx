@@ -1,21 +1,61 @@
 import MainLayout from '@/app/components/MainLayout';
 import Link from 'next/link';
-import { getDb } from '@/lib/db';
+import { getDb, isUsingSupabase } from '@/lib/db';
 import { notFound } from 'next/navigation';
 
 export default async function KlantDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = getDb();
   
-  const client = db.prepare('SELECT * FROM clients WHERE id = ?').get(id);
+  let client, statuses, evidence, gaps;
   
-  if (!client) {
-    notFound();
-  }
+  if (isUsingSupabase()) {
+    // Supabase async queries
+    const { data: clientData, error: clientError } = await db
+      .from('clients')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (clientError || !clientData) {
+      notFound();
+    }
+    
+    client = clientData;
+    
+    const { data: statusesData } = await db
+      .from('client_status')
+      .select('*')
+      .eq('client_id', id)
+      .order('id');
+    statuses = statusesData || [];
+    
+    const { data: evidenceData } = await db
+      .from('evidence_items')
+      .select('*')
+      .eq('client_id', id)
+      .order('datum', { ascending: false });
+    evidence = evidenceData || [];
+    
+    const { data: gapsData } = await db
+      .from('gap_items')
+      .select('*')
+      .eq('client_id', id)
+      .order('created_at', { ascending: false });
+    gaps = gapsData || [];
+    
+  } else {
+    // SQLite/in-memory sync queries
+    client = db.prepare('SELECT * FROM clients WHERE id = ?').get(id);
+    
+    if (!client) {
+      notFound();
+    }
 
-  const statuses = db.prepare('SELECT * FROM client_status WHERE client_id = ? ORDER BY id').all(id);
-  const evidence = db.prepare('SELECT * FROM evidence_items WHERE client_id = ? ORDER BY datum DESC').all(id);
-  const gaps = db.prepare('SELECT * FROM gap_items WHERE client_id = ? ORDER BY created_at DESC').all(id);
+    statuses = db.prepare('SELECT * FROM client_status WHERE client_id = ? ORDER BY id').all(id);
+    evidence = db.prepare('SELECT * FROM evidence_items WHERE client_id = ? ORDER BY datum DESC').all(id);
+    gaps = db.prepare('SELECT * FROM gap_items WHERE client_id = ? ORDER BY created_at DESC').all(id);
+  }
 
   const statusMap: Record<string, any> = {};
   statuses.forEach((s: any) => {

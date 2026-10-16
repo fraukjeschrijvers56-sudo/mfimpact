@@ -1,32 +1,63 @@
 import MainLayout from '../components/MainLayout';
 import GlassWindow from '../components/GlassWindow';
 import Link from 'next/link';
-import { getDb } from '@/lib/db';
+import { getDb, isUsingSupabase } from '@/lib/db';
 import { seedData } from '@/lib/seed';
 import { Users, Search, AlertTriangle, BookOpen } from 'lucide-react';
 
-export default function DashboardPage() {
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardPage() {
   try {
     const db = getDb();
-    const clientCount = db.prepare('SELECT COUNT(*) as count FROM clients').get() as { count: number };
-    
-    if (clientCount.count === 0) {
-      seedData();
-    }
-
-    const stats = {
-      totalClients: clientCount.count,
-      activeScans: db.prepare('SELECT COUNT(DISTINCT client_id) as count FROM scan_answers').get() as { count: number },
-      openGaps: db.prepare('SELECT COUNT(*) as count FROM gap_items WHERE status = ?').get('open') as { count: number },
-      legislationItems: db.prepare('SELECT COUNT(*) as count FROM legislation').get() as { count: number },
+    let stats: {
+      totalClients: number;
+      activeScans: number;
+      openGaps: number;
+      legislationItems: number;
     };
+    let recentClients: any[];
+    
+    if (isUsingSupabase()) {
+      // Supabase async queries
+      const [clientsResult, scansResult, gapsResult, legislationResult, recentResult] = await Promise.all([
+        db.from('clients').select('id', { count: 'exact', head: true }),
+        db.from('scan_answers').select('client_id', { count: 'exact', head: true }),
+        db.from('gap_items').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+        db.from('legislation').select('id', { count: 'exact', head: true }),
+        db.from('clients').select('id, naam, sector, updated_at').order('updated_at', { ascending: false }).limit(5)
+      ]);
+      
+      stats = {
+        totalClients: clientsResult.count || 0,
+        activeScans: scansResult.count || 0,
+        openGaps: gapsResult.count || 0,
+        legislationItems: legislationResult.count || 0,
+      };
+      recentClients = recentResult.data || [];
+      
+    } else {
+      // SQLite sync queries
+      const clientCount = db.prepare('SELECT COUNT(*) as count FROM clients').get() as { count: number };
+      
+      if (clientCount.count === 0) {
+        seedData();
+      }
 
-    const recentClients = db.prepare(`
-      SELECT id, naam, sector, updated_at 
-      FROM clients 
-      ORDER BY updated_at DESC 
-      LIMIT 5
-    `).all();
+      stats = {
+        totalClients: clientCount.count,
+        activeScans: (db.prepare('SELECT COUNT(DISTINCT client_id) as count FROM scan_answers').get() as { count: number }).count,
+        openGaps: (db.prepare('SELECT COUNT(*) as count FROM gap_items WHERE status = ?').get('open') as { count: number }).count,
+        legislationItems: (db.prepare('SELECT COUNT(*) as count FROM legislation').get() as { count: number }).count,
+      };
+
+      recentClients = db.prepare(`
+        SELECT id, naam, sector, updated_at 
+        FROM clients 
+        ORDER BY updated_at DESC 
+        LIMIT 5
+      `).all();
+    }
 
     return (
       <MainLayout>
@@ -58,7 +89,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-emerald-200">Actieve scans</p>
-                  <p className="text-3xl font-bold text-white mt-1">{stats.activeScans.count}</p>
+                  <p className="text-3xl font-bold text-white mt-1">{stats.activeScans}</p>
                 </div>
               </div>
             </GlassWindow>
@@ -70,7 +101,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-amber-200">Open gaps</p>
-                  <p className="text-3xl font-bold text-white mt-1">{stats.openGaps.count}</p>
+                  <p className="text-3xl font-bold text-white mt-1">{stats.openGaps}</p>
                 </div>
               </div>
             </GlassWindow>
@@ -82,7 +113,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-blue-200">Wetgeving items</p>
-                  <p className="text-3xl font-bold text-white mt-1">{stats.legislationItems.count}</p>
+                  <p className="text-3xl font-bold text-white mt-1">{stats.legislationItems}</p>
                 </div>
               </div>
             </GlassWindow>
