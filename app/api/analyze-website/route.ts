@@ -113,11 +113,12 @@ async function deepCrawlWebsite(baseUrl: string): Promise<{ pages: Array<{ url: 
 
 async function researchCompanyWithWebSearch(companyName: string, city: string): Promise<string> {
   if (!process.env.OPENAI_API_KEY) {
-    return 'Web search niet beschikbaar (geen API key)';
+    console.warn('Web search skipped: No OpenAI API key');
+    return 'Web search overgeslagen (geen API key beschikbaar)';
   }
 
   try {
-    // Use OpenAI with web_search tool (Responses API)
+    // Use OpenAI with web_search_preview tool
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -422,14 +423,31 @@ Geef in JSON formaat:
 
     // Full analysis (all steps combined with deep research)
     if (step === 'full') {
-      // Deep crawl
-      const crawlData = await deepCrawlWebsite(websiteUrl.toString());
+      console.log('Starting full analysis for:', websiteUrl.toString(), 'city:', city);
       
-      // Web search
+      // Deep crawl (non-fatal)
+      let crawlData;
+      try {
+        crawlData = await deepCrawlWebsite(websiteUrl.toString());
+        console.log(`Crawled ${crawlData.pages.length} pages, ${crawlData.totalContent.length} chars`);
+      } catch (error) {
+        console.error('Crawl error (continuing):', error);
+        crawlData = { pages: [], totalContent: 'Crawl fout' };
+      }
+      
+      // Web search (non-fatal)
       const companyName = websiteUrl.hostname.replace('www.', '').split('.')[0];
-      const webResearch = await researchCompanyWithWebSearch(companyName, city);
+      let webResearch;
+      try {
+        webResearch = await researchCompanyWithWebSearch(companyName, city);
+        console.log('Web research completed, length:', webResearch.length);
+      } catch (error) {
+        console.error('Web research error (continuing):', error);
+        webResearch = 'Web research overgeslagen';
+      }
       
       // Extract company data with sources
+      console.log('Extracting company data with OpenAI...');
       const { object: companyData } = await generateObject({
         model: openai('gpt-4o-mini'),
         schema: CompanyDataSchema,
@@ -455,22 +473,35 @@ REGELS:
 
 Vul alle velden in met bronnen waar mogelijk.`,
       });
+      
+      console.log('Extracted company data:', {
+        naam: companyData.naam,
+        sector: companyData.sector,
+        fte: companyData.aantal_medewerkers,
+        omzet: companyData.omzet,
+        kvk: companyData.kvk
+      });
 
       // Create client in database
       let clientId: number;
       
       if (isUsingSupabase()) {
+        // Convert 'onbekend' strings to null for INTEGER/NUMERIC columns
         const clientData = {
           naam: companyData.naam,
-          sector: companyData.sector,
-          aantal_medewerkers: companyData.aantal_medewerkers === 'onbekend' ? null : companyData.aantal_medewerkers,
-          omzet: companyData.omzet === 'onbekend' ? null : companyData.omzet,
-          balanstotaal: companyData.balanstotaal === 'onbekend' ? null : companyData.balanstotaal,
+          kvk: companyData.kvk || null,
+          sector: companyData.sector || null,
+          aantal_medewerkers: typeof companyData.aantal_medewerkers === 'number' ? companyData.aantal_medewerkers : null,
+          omzet: typeof companyData.omzet === 'number' ? companyData.omzet : null,
+          balanstotaal: typeof companyData.balanstotaal === 'number' ? companyData.balanstotaal : null,
           afnemers: companyData.belangrijkste_afnemers?.join(', ') || null,
-          kvk: companyData.kvk,
+          banken: null,
+          tenders: null,
           website_url: websiteUrl.toString(),
           plaats: city,
         };
+        
+        console.log('Inserting client to Supabase:', { ...clientData, afnemers: clientData.afnemers?.substring(0, 50) });
         
         const { data: client, error } = await db
           .from('clients')
@@ -478,7 +509,10 @@ Vul alle velden in met bronnen waar mogelijk.`,
           .select('id')
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase insert error:', error);
+          throw new Error(`Database fout: ${error.message}`);
+        }
         clientId = client.id;
         
         // Initialize status
@@ -522,8 +556,7 @@ Vul alle velden in met bronnen waar mogelijk.`,
         companyData,
         websiteUrl: websiteUrl.toString(),
         pagesAnalyzed: crawlData.pages.length,
-        // Only confirm if FTE is missing (omzet not important)
-        needsConfirmation: companyData.aantal_medewerkers === 'onbekend'
+        needsConfirmation: false // Never block - FTE and omzet are not required
       });
     }
 
@@ -531,8 +564,16 @@ Vul alle velden in met bronnen waar mogelijk.`,
     
   } catch (error) {
     console.error('Website analysis error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Onbekende fout';
+    const errorDetails = error instanceof Error ? error.stack : String(error);
+    console.error('Error details:', errorDetails);
+    
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Analyse mislukt' },
+      { 
+        error: errorMessage,
+        step: 'unknown',
+        details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
+      },
       { status: 500 }
     );
   }

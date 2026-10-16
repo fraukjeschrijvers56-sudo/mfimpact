@@ -39,10 +39,6 @@ export default function NieuweKlantPage() {
   const [error, setError] = useState('');
   const [clientId, setClientId] = useState<number | null>(null);
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
-  const [needsConfirmation, setNeedsConfirmation] = useState(false);
-  
-  // Editable fields for confirmation
-  const [editedData, setEditedData] = useState<Partial<CompanyData>>({});
 
   const runAnalysis = async () => {
     if (!url) {
@@ -69,55 +65,76 @@ export default function NieuweKlantPage() {
 
       if (!extractRes.ok) {
         const err = await extractRes.json();
-        throw new Error(err.error || 'Analyse mislukt');
+        const errorMsg = err.error || 'Analyse mislukt';
+        const failedStep = err.step || 'extracting';
+        console.error(`Analysis failed at step ${failedStep}:`, errorMsg, err.details);
+        throw new Error(`Fout bij ${failedStep}: ${errorMsg}`);
       }
 
       const extractData = await extractRes.json();
       setClientId(extractData.clientId);
       setCompanyData(extractData.companyData);
-      setNeedsConfirmation(extractData.needsConfirmation);
-
-      // If data needs confirmation, pause here
-      if (extractData.needsConfirmation) {
-        setStep('idle');
-        setEditedData(extractData.companyData);
-        return;
-      }
-
-      // Continue with analysis
+      
+      // Never block for confirmation - continue directly
       await continueAnalysis(extractData.clientId);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Er is een fout opgetreden');
+      const errorMessage = err instanceof Error ? err.message : 'Er is een fout opgetreden';
+      console.error('Full analysis error:', errorMessage, err);
+      setError(errorMessage);
       setStep('error');
     }
   };
 
   const continueAnalysis = async (cId: number) => {
     try {
-      // Step 2: Scan (VSME B1-B11)
-      setStep('scanning');
-      await fetch('/api/analyze-website', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, city, step: 'scan', clientId: cId }),
-      });
+      // Step 2: Scan (VSME B1-B11) - non-fatal
+      try {
+        setStep('scanning');
+        const scanRes = await fetch('/api/analyze-website', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, city, step: 'scan', clientId: cId }),
+        });
+        if (!scanRes.ok) {
+          const err = await scanRes.json();
+          console.error('Scan step failed (continuing):', err);
+        }
+      } catch (scanErr) {
+        console.error('Scan step error (continuing):', scanErr);
+      }
 
-      // Step 3: Threshold check
-      setStep('thresholds');
-      await fetch('/api/analyze-website', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, city, step: 'threshold', clientId: cId }),
-      });
+      // Step 3: Threshold check - non-fatal
+      try {
+        setStep('thresholds');
+        const thresholdRes = await fetch('/api/analyze-website', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, city, step: 'threshold', clientId: cId }),
+        });
+        if (!thresholdRes.ok) {
+          const err = await thresholdRes.json();
+          console.error('Threshold step failed (continuing):', err);
+        }
+      } catch (thresholdErr) {
+        console.error('Threshold step error (continuing):', thresholdErr);
+      }
 
-      // Step 4: Claim check
-      setStep('claims');
-      await fetch('/api/analyze-website', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, city, step: 'claims', clientId: cId }),
-      });
+      // Step 4: Claim check - non-fatal
+      try {
+        setStep('claims');
+        const claimsRes = await fetch('/api/analyze-website', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, city, step: 'claims', clientId: cId }),
+        });
+        if (!claimsRes.ok) {
+          const err = await claimsRes.json();
+          console.error('Claims step failed (continuing):', err);
+        }
+      } catch (claimsErr) {
+        console.error('Claims step error (continuing):', claimsErr);
+      }
 
       setStep('complete');
       
@@ -127,27 +144,13 @@ export default function NieuweKlantPage() {
       }, 2000);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Analyse mislukt');
+      const errorMessage = err instanceof Error ? err.message : 'Analyse mislukt';
+      console.error('Continue analysis error:', errorMessage, err);
+      setError(errorMessage);
       setStep('error');
     }
   };
 
-  const confirmAndContinue = async () => {
-    if (!clientId) return;
-
-    // Update client with confirmed data
-    await fetch('/api/klanten', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: clientId,
-        ...editedData
-      }),
-    });
-
-    setNeedsConfirmation(false);
-    await continueAnalysis(clientId);
-  };
 
   const getStepStatus = (currentStep: AnalysisStep, checkStep: AnalysisStep) => {
     const steps: AnalysisStep[] = ['crawling', 'researching', 'extracting', 'scanning', 'thresholds', 'claims', 'complete'];
@@ -273,73 +276,7 @@ export default function NieuweKlantPage() {
           </GlassWindow>
         )}
 
-        {/* Confirmation needed (only if FTE missing) */}
-        {needsConfirmation && companyData && (
-          <GlassWindow title="Bevestig aantal medewerkers">
-            <div className="space-y-4">
-              <div className="bg-amber-500/20 border border-amber-400/30 rounded-lg p-4">
-                <p className="text-amber-200 text-sm">
-                  Het aantal medewerkers (FTE) kon niet worden gevonden. Dit is belangrijk voor drempelchecks (CSRD, CSDDD).
-                  {companyData.aantal_medewerkers_source && (
-                    <span className="block mt-2 text-xs">
-                      Bron geprobeerd: {companyData.aantal_medewerkers_source}
-                    </span>
-                  )}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Bedrijfsnaam
-                  </label>
-                  <input
-                    type="text"
-                    value={editedData.naam || companyData.naam}
-                    onChange={(e) => setEditedData({ ...editedData, naam: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Sector
-                  </label>
-                  <input
-                    type="text"
-                    value={editedData.sector || companyData.sector}
-                    onChange={(e) => setEditedData({ ...editedData, sector: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-teal-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">
-                    Aantal medewerkers (FTE) *
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="Vul aantal FTE in"
-                    value={typeof editedData.aantal_medewerkers === 'number' ? editedData.aantal_medewerkers : ''}
-                    onChange={(e) => setEditedData({ ...editedData, aantal_medewerkers: e.target.value ? parseInt(e.target.value) : 'onbekend' })}
-                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-teal-300/50 focus:outline-none focus:ring-2 focus:ring-teal-400"
-                  />
-                </div>
-              </div>
-              
-              <p className="text-teal-200/70 text-sm">
-                Omzet hoeft niet ingevuld te worden - FTE is voldoende voor drempelchecks.
-              </p>
-
-              <button
-                onClick={confirmAndContinue}
-                className="w-full px-6 py-3 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-600 transition-all"
-              >
-                Bevestigen en doorgaan
-              </button>
-            </div>
-          </GlassWindow>
-        )}
+        {/* No confirmation screen - flow continues automatically */}
 
         {/* Complete */}
         {step === 'complete' && (
