@@ -1,10 +1,11 @@
 import MainLayout from '../components/MainLayout';
+import GlassWindow from '../components/GlassWindow';
 import Link from 'next/link';
 import { getDb } from '@/lib/db';
 import { seedData } from '@/lib/seed';
+import { Users, Search, AlertTriangle, BookOpen } from 'lucide-react';
 
 export default function DashboardPage() {
-  // Initialize database and seed if needed
   try {
     const db = getDb();
     const clientCount = db.prepare('SELECT COUNT(*) as count FROM clients').get() as { count: number };
@@ -29,175 +30,120 @@ export default function DashboardPage() {
 
     return (
       <MainLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="mt-2 text-gray-600">Overzicht van de MVO-bewijs werkbank</p>
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <h1 className="text-4xl font-bold text-white">Dashboard</h1>
+            <p className="text-teal-200 text-lg">Overzicht van de MVO-bewijs werkbank</p>
           </div>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <span className="text-3xl">👥</span>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Totaal klanten
-                      </dt>
-                      <dd className="text-3xl font-semibold text-gray-900">
-                        {stats.totalClients}
-                      </dd>
-                    </dl>
-                  </div>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <GlassWindow>
+              <div className="flex items-start space-x-4">
+                <div className="p-3 rounded-xl bg-teal-500/20 border border-teal-400/30">
+                  <Users className="w-6 h-6 text-teal-200" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-teal-200">Totaal klanten</p>
+                  <p className="text-3xl font-bold text-white mt-1">{stats.totalClients}</p>
                 </div>
               </div>
-            </div>
+            </GlassWindow>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <span className="text-3xl">🔍</span>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Actieve scans
-                      </dt>
-                      <dd className="text-3xl font-semibold text-gray-900">
-                        {stats.activeScans.count}
-                      </dd>
-                    </dl>
-                  </div>
+            <GlassWindow>
+              <div className="flex items-start space-x-4">
+                <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-400/30">
+                  <Search className="w-6 h-6 text-emerald-200" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-emerald-200">Actieve scans</p>
+                  <p className="text-3xl font-bold text-white mt-1">{stats.activeScans.count}</p>
                 </div>
               </div>
-            </div>
+            </GlassWindow>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <span className="text-3xl">⚠️</span>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Open gaps
-                      </dt>
-                      <dd className="text-3xl font-semibold text-gray-900">
-                        {stats.openGaps.count}
-                      </dd>
-                    </dl>
-                  </div>
+            <GlassWindow>
+              <div className="flex items-start space-x-4">
+                <div className="p-3 rounded-xl bg-amber-500/20 border border-amber-400/30">
+                  <AlertTriangle className="w-6 h-6 text-amber-200" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-amber-200">Open gaps</p>
+                  <p className="text-3xl font-bold text-white mt-1">{stats.openGaps.count}</p>
                 </div>
               </div>
-            </div>
+            </GlassWindow>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <span className="text-3xl">📋</span>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Wetgeving items
-                      </dt>
-                      <dd className="text-3xl font-semibold text-gray-900">
-                        {stats.legislationItems.count}
-                      </dd>
-                    </dl>
-                  </div>
+            <GlassWindow>
+              <div className="flex items-start space-x-4">
+                <div className="p-3 rounded-xl bg-blue-500/20 border border-blue-400/30">
+                  <BookOpen className="w-6 h-6 text-blue-200" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-blue-200">Wetgeving items</p>
+                  <p className="text-3xl font-bold text-white mt-1">{stats.legislationItems.count}</p>
                 </div>
               </div>
-            </div>
+            </GlassWindow>
           </div>
 
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-5 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Recente klanten</h2>
-            </div>
-            <div className="divide-y divide-gray-200">
+          {/* Recent Clients */}
+          <GlassWindow title="Recente klanten" dragEnabled={true}>
+            <div className="space-y-3">
               {recentClients.map((client: any) => (
                 <Link
                   key={client.id}
                   href={`/klanten/${client.id}`}
-                  className="block hover:bg-gray-50 px-5 py-4"
+                  className="block p-4 rounded-xl backdrop-blur-sm bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all group"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-blue-600">{client.naam}</p>
-                      <p className="text-sm text-gray-500">{client.sector || 'Geen sector'}</p>
+                      <p className="font-semibold text-white group-hover:text-teal-200 transition-colors">{client.naam}</p>
+                      <p className="text-sm text-teal-200/70">{client.sector || 'Geen sector'}</p>
                     </div>
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-teal-200/50">
                       {new Date(client.updated_at).toLocaleDateString('nl-NL')}
                     </div>
                   </div>
                 </Link>
               ))}
               {recentClients.length === 0 && (
-                <div className="px-5 py-4 text-sm text-gray-500">
+                <div className="text-center py-8 text-teal-200/50">
                   Nog geen klanten
                 </div>
               )}
             </div>
-          </div>
+          </GlassWindow>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Link
-              href="/klanten"
-              className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 hover:bg-blue-100 transition"
-            >
-              <div className="flex items-center">
-                <span className="text-4xl mr-4">👥</span>
-                <div>
-                  <h3 className="text-lg font-semibold text-blue-900">Klantbeheer</h3>
-                  <p className="text-sm text-blue-700">Beheer klantdossiers en bewijs</p>
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Link href="/klanten">
+              <GlassWindow>
+                <div className="flex items-center space-x-4">
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-teal-500/20 to-emerald-500/20 border border-teal-400/30">
+                    <Users className="w-8 h-8 text-teal-200" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Klantbeheer</h3>
+                    <p className="text-teal-200/70 text-sm mt-1">Beheer klantdossiers en bewijs</p>
+                  </div>
                 </div>
-              </div>
+              </GlassWindow>
             </Link>
 
-            <Link
-              href="/scan"
-              className="bg-green-50 border-2 border-green-200 rounded-lg p-6 hover:bg-green-100 transition"
-            >
-              <div className="flex items-center">
-                <span className="text-4xl mr-4">🔍</span>
-                <div>
-                  <h3 className="text-lg font-semibold text-green-900">Scan & gatanalyse</h3>
-                  <p className="text-sm text-green-700">Start een nieuwe scan</p>
+            <Link href="/scan">
+              <GlassWindow>
+                <div className="flex items-center space-x-4">
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-400/30">
+                    <Search className="w-8 h-8 text-emerald-200" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Scan & gatanalyse</h3>
+                    <p className="text-emerald-200/70 text-sm mt-1">Start een nieuwe scan</p>
+                  </div>
                 </div>
-              </div>
-            </Link>
-
-            <Link
-              href="/wetgeving"
-              className="bg-purple-50 border-2 border-purple-200 rounded-lg p-6 hover:bg-purple-100 transition"
-            >
-              <div className="flex items-center">
-                <span className="text-4xl mr-4">📋</span>
-                <div>
-                  <h3 className="text-lg font-semibold text-purple-900">Wetgeving</h3>
-                  <p className="text-sm text-purple-700">Bekijk regelgeving en drempels</p>
-                </div>
-              </div>
-            </Link>
-
-            <Link
-              href="/claimcheck"
-              className="bg-orange-50 border-2 border-orange-200 rounded-lg p-6 hover:bg-orange-100 transition"
-            >
-              <div className="flex items-center">
-                <span className="text-4xl mr-4">✓</span>
-                <div>
-                  <h3 className="text-lg font-semibold text-orange-900">Claimcheck</h3>
-                  <p className="text-sm text-orange-700">Controleer groene claims</p>
-                </div>
-              </div>
+              </GlassWindow>
             </Link>
           </div>
         </div>
@@ -207,9 +153,11 @@ export default function DashboardPage() {
     console.error('Dashboard error:', error);
     return (
       <MainLayout>
-        <div className="text-red-600">
-          Error loading dashboard. Check console for details.
-        </div>
+        <GlassWindow title="Error">
+          <div className="text-rose-200">
+            Error loading dashboard. Check console for details.
+          </div>
+        </GlassWindow>
       </MainLayout>
     );
   }
