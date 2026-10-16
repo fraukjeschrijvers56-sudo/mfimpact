@@ -41,3 +41,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create client' }, { status: 500 });
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const data = await request.json();
+    const db = getDb();
+    
+    if (!data.id) {
+      return NextResponse.json({ error: 'Client ID required' }, { status: 400 });
+    }
+    
+    const stmt = db.prepare(`
+      UPDATE clients 
+      SET naam = ?, kvk = ?, sector = ?, aantal_medewerkers = ?, omzet = ?, balanstotaal = ?, afnemers = ?
+      WHERE id = ?
+    `);
+    
+    stmt.run(
+      data.naam,
+      data.kvk || null,
+      data.sector || null,
+      typeof data.aantal_medewerkers === 'number' ? data.aantal_medewerkers : null,
+      typeof data.omzet === 'number' ? data.omzet : null,
+      typeof data.balanstotaal === 'number' ? data.balanstotaal : null,
+      data.afnemers || null,
+      data.id
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating client:', error);
+    return NextResponse.json({ error: 'Failed to update client' }, { status: 500 });
+  }
+}
