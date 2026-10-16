@@ -9,6 +9,7 @@ import { extractAndCheckClaims } from '@/lib/claim-check-rules';
 import { ALL_SCAN_QUESTIONS, getGapPriority, getSuggestedEvidence } from '@/lib/vsme-scan-questions';
 
 // Schema for company data extraction - NOOIT verzinnen, gebruik "onbekend"
+// All properties REQUIRED for OpenAI strict mode - use null/empty for missing data
 const CompanyDataSchema = z.object({
   naam: z.string(),
   kvk: z.string().nullable(),
@@ -16,9 +17,9 @@ const CompanyDataSchema = z.object({
   aantal_medewerkers: z.union([z.number(), z.literal('onbekend')]),
   omzet: z.union([z.number(), z.literal('onbekend')]),
   balanstotaal: z.union([z.number(), z.literal('onbekend')]),
-  belangrijkste_afnemers: z.array(z.string()).optional(),
-  producten: z.array(z.string()).optional(),
-  beschrijving: z.string().optional(),
+  belangrijkste_afnemers: z.array(z.string()).nullable(),
+  producten: z.array(z.string()).nullable(),
+  beschrijving: z.string().nullable(),
   confidence: z.enum(['hoog', 'middel', 'laag']),
 });
 
@@ -93,14 +94,15 @@ export async function POST(request: NextRequest) {
 Website: ${websiteUrl.toString()}
 Content: ${content}
 
-KRITISCH: NOOIT aantallen verzinnen!
+KRITISCH: NOOIT aantallen verzinnen! Gebruik null voor ontbrekende arrays/strings.
 - aantal_medewerkers: alleen als expliciet vermeld (bijv. "50 medewerkers", "team van 12"), anders "onbekend"
 - omzet: alleen als expliciet vermeld in jaarverslag/cijfers, anders "onbekend"  
 - balanstotaal: alleen als expliciet vermeld, anders "onbekend"
 - kvk: zoek in footer, algemene voorwaarden, of "KvK" vermelding, anders null
 - sector: gok SBI-code sector op basis van producten/diensten
-- producten: lijst producten (voor EUDR/CBAM check: soja, palmolie, rundvee, cacao, koffie, rubber, hout, staal, aluminium, cement)
-- belangrijkste_afnemers: klantgroepen (bijv. "gemeenten", "bouwbedrijven", "consumenten")
+- producten: array van producten voor EUDR/CBAM check (soja, palmolie, rundvee, cacao, koffie, rubber, hout, staal, aluminium, cement), of null als onbekend
+- belangrijkste_afnemers: array van klantgroepen (bijv. ["gemeenten", "bouwbedrijven", "consumenten"]), of null als onbekend
+- beschrijving: korte omschrijving bedrijf, of null
 - confidence: 'hoog' als veel cijfers gevonden, 'middel' als sector duidelijk, 'laag' als weinig info`,
       });
 
@@ -271,13 +273,15 @@ Geef in JSON formaat:
 Website: ${websiteUrl.toString()}
 Content: ${content}
 
-KRITISCH: Gebruik "onbekend" als geen bewijs.
+KRITISCH: Gebruik "onbekend" voor getallen, null voor ontbrekende tekst/arrays.
 - aantal_medewerkers: alleen als vermeld, anders "onbekend"
 - omzet: alleen als vermeld in cijfers, anders "onbekend"
 - balanstotaal: alleen als vermeld, anders "onbekend"
-- kvk: zoek in footer/algemene voorwaarden
+- kvk: zoek in footer/algemene voorwaarden, null als niet gevonden
 - sector: gok SBI op basis van activiteiten
-- producten: lijst voor EUDR/CBAM (soja, palmolie, rundvee, cacao, koffie, rubber, hout, staal, aluminium, cement)
+- belangrijkste_afnemers: array van klantgroepen, of null als onbekend
+- producten: array van producten voor EUDR/CBAM check (soja, palmolie, rundvee, cacao, koffie, rubber, hout, staal, aluminium, cement), of null
+- beschrijving: korte omschrijving, of null
 - confidence: hoog/middel/laag`,
       });
 
