@@ -7,6 +7,7 @@ import { getDb, isUsingSupabase } from '@/lib/db';
 import { checkAllThresholds } from '@/lib/esg-thresholds';
 import { extractAndCheckClaims } from '@/lib/claim-check-rules';
 import { ALL_SCAN_QUESTIONS, getGapPriority, getSuggestedEvidence } from '@/lib/vsme-scan-questions';
+import { performWebSearchResearch, validateDossierQuotes } from '@/lib/research-engine';
 
 // Vercel function timeout
 export const maxDuration = 300; // 5 minutes
@@ -523,6 +524,41 @@ Vul alle velden in met bronnen waar mogelijk.`,
           status: 'nog-niet-gestart'
         }));
         await db.from('client_status').insert(statusData);
+        
+        // Store structured dossier if available (non-fatal)
+        try {
+          if (process.env.OPENAI_API_KEY) {
+            console.log('Performing structured research for dossier...');
+            const dossierText = await performWebSearchResearch(
+              websiteUrl.toString(),
+              city,
+              process.env.OPENAI_API_KEY
+            );
+            
+            // Try to parse as JSON
+            try {
+              const dossier = JSON.parse(dossierText);
+              console.log('Validating quotes in dossier...');
+              const validatedDossier = await validateDossierQuotes(dossier);
+              
+              // Store in dossier column
+              const { error: dossierError } = await db
+                .from('clients')
+                .update({ dossier: validatedDossier })
+                .eq('id', clientId);
+              
+              if (dossierError) {
+                console.error('Failed to store dossier:', dossierError);
+              } else {
+                console.log('Structured dossier stored successfully');
+              }
+            } catch (parseError) {
+              console.error('Dossier is not valid JSON, storing as text:', parseError);
+            }
+          }
+        } catch (dossierError) {
+          console.error('Structured research failed (non-fatal):', dossierError);
+        }
         
       } else {
         const result = db.prepare(`
