@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import MainLayout from '@/app/components/MainLayout';
 import { Globe, MapPin, Loader2, Check, AlertTriangle, Search, Building2, FileSearch, Scale, Sparkles } from 'lucide-react';
 
@@ -20,8 +20,9 @@ function fmt(ms: number) {
   return s >= 60 ? `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s` : `${s}s`;
 }
 
-export default function IntakePage() {
+function IntakeForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [url, setUrl] = useState('');
   const [city, setCity] = useState('');
   const [running, setRunning] = useState(false);
@@ -32,7 +33,20 @@ export default function IntakePage() {
   const [activeStart, setActiveStart] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
   const [done, setDone] = useState(false);
+  const [reanalyzeId, setReanalyzeId] = useState<string | null>(null);
   const startRef = useRef<number>(0);
+
+  // Handle reanalyze query params
+  useEffect(() => {
+    const reanalyze = searchParams.get('reanalyze');
+    const urlParam = searchParams.get('url');
+    const cityParam = searchParams.get('city');
+    if (reanalyze && urlParam && cityParam) {
+      setReanalyzeId(reanalyze);
+      setUrl(decodeURIComponent(urlParam));
+      setCity(decodeURIComponent(cityParam));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!running) return;
@@ -67,7 +81,7 @@ export default function IntakePage() {
     setRunning(true);
     startRef.current = Date.now();
 
-    let clientId: number | undefined;
+    let clientId: number | undefined = reanalyzeId ? parseInt(reanalyzeId) : undefined;
     for (const s of STEPS) {
       const t0 = Date.now();
       setActiveStart(t0);
@@ -103,7 +117,11 @@ export default function IntakePage() {
     setActiveStart(null);
     setRunning(false);
     setDone(true);
-    if (clientId) router.push(`/prospect/${clientId}`);
+    if (clientId) {
+      // Clear query params and navigate
+      router.push(`/prospect/${clientId}`);
+      router.refresh();
+    }
   };
 
   const showProgress = running || done || Object.values(states).some((s) => s !== 'wachten');
@@ -115,8 +133,14 @@ export default function IntakePage() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-sm">
             <Sparkles className="w-4 h-4" /> AI-diepteonderzoek met bronnen
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow">Nieuwe prospect</h1>
-          <p className="text-lg text-emerald-50/90">Vul de website en de hoofdvestigingsplaats in. De rest zoeken wij uit.</p>
+          <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow">
+            {reanalyzeId ? 'Opnieuw onderzoeken' : 'Nieuwe prospect'}
+          </h1>
+          <p className="text-lg text-emerald-50/90">
+            {reanalyzeId
+              ? 'Het volledige onderzoek wordt opnieuw uitgevoerd en het dossier wordt bijgewerkt.'
+              : 'Vul de website en de hoofdvestigingsplaats in. De rest zoeken wij uit.'}
+          </p>
         </div>
 
         <form onSubmit={start} className="rounded-2xl bg-emerald-950/85 border border-emerald-600/40 shadow-2xl backdrop-blur-xl p-6 md:p-8 space-y-5">
@@ -214,5 +238,19 @@ export default function IntakePage() {
         )}
       </div>
     </MainLayout>
+  );
+}
+
+export default function IntakePage() {
+  return (
+    <Suspense fallback={
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
+        </div>
+      </MainLayout>
+    }>
+      <IntakeForm />
+    </Suspense>
   );
 }

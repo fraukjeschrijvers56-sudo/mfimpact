@@ -541,8 +541,8 @@ Vul alle velden in met bronnen waar mogelijk.`,
         kvk: companyData.kvk
       });
 
-      // Create client in database
-      let clientId: number;
+      // Create or update client in database
+      let finalClientId: number;
       
       if (isUsingSupabase()) {
         // Convert 'onbekend' strings to null for INTEGER/NUMERIC columns
@@ -558,30 +558,47 @@ Vul alle velden in met bronnen waar mogelijk.`,
           tenders: null,
           website_url: websiteUrl.toString(),
           plaats: city,
+          updated_at: new Date().toISOString(),
         };
         
-        console.log('Inserting client to Supabase:', { ...clientData, afnemers: clientData.afnemers?.substring(0, 50) });
-        
-        const { data: client, error } = await db
-          .from('clients')
-          .insert(clientData)
-          .select('id')
-          .single();
-        
-        if (error) {
-          console.error('Supabase insert error:', error);
-          throw new Error(`Database fout: ${error.message}`);
+        if (clientId) {
+          // Update existing client
+          console.log('Updating existing client:', clientId);
+          const { error } = await db
+            .from('clients')
+            .update(clientData)
+            .eq('id', clientId);
+          
+          if (error) {
+            console.error('Supabase update error:', error);
+            throw new Error(`Database fout: ${error.message}`);
+          }
+          finalClientId = clientId as number;
+        } else {
+          // Create new client
+          console.log('Inserting client to Supabase:', { ...clientData, afnemers: clientData.afnemers?.substring(0, 50) });
+          
+          const { data: client, error } = await db
+            .from('clients')
+            .insert(clientData)
+            .select('id')
+            .single();
+          
+          if (error) {
+            console.error('Supabase insert error:', error);
+            throw new Error(`Database fout: ${error.message}`);
+          }
+          finalClientId = client.id;
+          
+          // Initialize status for new clients only
+          const steps = ['scan', 'gatanalyse', 'bewijspakket', 'claimcheck', 'jaarlijkse-update'];
+          const statusData = steps.map(step => ({
+            client_id: finalClientId,
+            stap: step,
+            status: 'nog-niet-gestart'
+          }));
+          await db.from('client_status').insert(statusData);
         }
-        clientId = client.id;
-        
-        // Initialize status
-        const steps = ['scan', 'gatanalyse', 'bewijspakket', 'claimcheck', 'jaarlijkse-update'];
-        const statusData = steps.map(step => ({
-          client_id: clientId,
-          stap: step,
-          status: 'nog-niet-gestart'
-        }));
-        await db.from('client_status').insert(statusData);
         
         // Store the basic profile in the dossier column (non-fatal). Deep research runs in step 'dossier'.
         try {
@@ -595,41 +612,61 @@ Vul alle velden in met bronnen waar mogelijk.`,
                 aangemaakt_op: new Date().toISOString(),
               },
             })
-            .eq('id', clientId);
+            .eq('id', finalClientId);
           if (dossierError) console.error('Failed to store basic dossier:', dossierError);
         } catch (dossierError) {
           console.error('Storing basic dossier failed (non-fatal):', dossierError);
         }
         
       } else {
-        const result = db.prepare(`
-          INSERT INTO clients (naam, sector, aantal_medewerkers, omzet, balanstotaal, afnemers, kvk)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          companyData.naam,
-          companyData.sector,
-          companyData.aantal_medewerkers === 'onbekend' ? null : companyData.aantal_medewerkers,
-          companyData.omzet === 'onbekend' ? null : companyData.omzet,
-          companyData.balanstotaal === 'onbekend' ? null : companyData.balanstotaal,
-          companyData.belangrijkste_afnemers?.join(', ') || null,
-          companyData.kvk
-        );
-        clientId = result.lastInsertRowid as number;
-        
-        // Initialize status
-        const steps = ['scan', 'gatanalyse', 'bewijspakket', 'claimcheck', 'jaarlijkse-update'];
-        const statusStmt = db.prepare(`
-          INSERT INTO client_status (client_id, stap, status)
-          VALUES (?, ?, ?)
-        `);
-        for (const step of steps) {
-          statusStmt.run(clientId, step, 'nog-niet-gestart');
+        if (clientId) {
+          // Update existing SQLite client
+          db.prepare(`
+            UPDATE clients 
+            SET naam = ?, sector = ?, aantal_medewerkers = ?, omzet = ?, balanstotaal = ?, afnemers = ?, kvk = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `).run(
+            companyData.naam,
+            companyData.sector,
+            companyData.aantal_medewerkers === 'onbekend' ? null : companyData.aantal_medewerkers,
+            companyData.omzet === 'onbekend' ? null : companyData.omzet,
+            companyData.balanstotaal === 'onbekend' ? null : companyData.balanstotaal,
+            companyData.belangrijkste_afnemers?.join(', ') || null,
+            companyData.kvk,
+            clientId
+          );
+          finalClientId = clientId as number;
+        } else {
+          // Create new SQLite client
+          const result = db.prepare(`
+            INSERT INTO clients (naam, sector, aantal_medewerkers, omzet, balanstotaal, afnemers, kvk)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            companyData.naam,
+            companyData.sector,
+            companyData.aantal_medewerkers === 'onbekend' ? null : companyData.aantal_medewerkers,
+            companyData.omzet === 'onbekend' ? null : companyData.omzet,
+            companyData.balanstotaal === 'onbekend' ? null : companyData.balanstotaal,
+            companyData.belangrijkste_afnemers?.join(', ') || null,
+            companyData.kvk
+          );
+          finalClientId = result.lastInsertRowid as number;
+          
+          // Initialize status for new clients only
+          const steps = ['scan', 'gatanalyse', 'bewijspakket', 'claimcheck', 'jaarlijkse-update'];
+          const statusStmt = db.prepare(`
+            INSERT INTO client_status (client_id, stap, status)
+            VALUES (?, ?, ?)
+          `);
+          for (const step of steps) {
+            statusStmt.run(finalClientId, step, 'nog-niet-gestart');
+          }
         }
       }
 
       return NextResponse.json({ 
         success: true,
-        clientId,
+        clientId: finalClientId,
         companyData,
         websiteUrl: websiteUrl.toString(),
         pagesAnalyzed: crawlData.pages.length,

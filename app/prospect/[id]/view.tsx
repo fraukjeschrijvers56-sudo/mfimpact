@@ -5,8 +5,10 @@ import { nl, isUnknown, labelize, hostOf, isUrl } from '@/lib/format';
 import {
   Building2, Globe, MapPin, FileText, ShieldCheck, Link2, Leaf, Award, Megaphone, AlertOctagon,
   Newspaper, Users, Briefcase, HelpCircle, Lightbulb, Scale, Layers, ListChecks, Search, Plus,
+  Pencil, Trash2, RefreshCw,
 } from 'lucide-react';
 import { Section, Badge, Bronnen, Waarde, FieldGrid, FieldRow, Generic, SourceLink, Stat } from './parts';
+import { ProspectActions } from './actions';
 
 
 const VSME_TITLES: Record<string, string> = {
@@ -98,9 +100,12 @@ export function ProspectView({ client }: { client: any }) {
               </div>
               {!isUnknown(samenvatting) && <p className="text-lg leading-relaxed text-white/95 max-w-4xl">{nl(samenvatting)}</p>}
             </div>
-            <Link href="/" className="inline-flex items-center gap-2 self-start px-4 py-2 rounded-lg bg-emerald-400 text-emerald-950 font-semibold hover:bg-emerald-300">
-              <Plus className="w-4 h-4" /> Nieuwe prospect
-            </Link>
+            <div className="flex flex-col gap-2 self-start">
+              <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-400 text-emerald-950 font-semibold hover:bg-emerald-300">
+                <Plus className="w-4 h-4" /> Nieuwe prospect
+              </Link>
+              <ProspectActions client={client} />
+            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6">
             <Stat label="Webbronnen" value={webbronnen.length + doorzocht.length} />
