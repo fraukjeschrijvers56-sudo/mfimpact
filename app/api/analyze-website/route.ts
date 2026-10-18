@@ -9,6 +9,7 @@ import { extractAndCheckClaims } from '@/lib/claim-check-rules';
 import { ALL_SCAN_QUESTIONS, getGapPriority, getSuggestedEvidence } from '@/lib/vsme-scan-questions';
 import { performDossierResearch, validateDossierQuotes } from '@/lib/research-engine';
 import { normalizeDossier } from '@/lib/field-normalizer';
+import { checkMvoRegister } from '@/lib/mvo-register';
 
 // Vercel function timeout
 export const maxDuration = 300; // 5 minutes
@@ -440,6 +441,52 @@ Geef in JSON formaat:
         return NextResponse.json({ error: `Diepteonderzoek mislukt: ${research.error || 'onbekend'}`, step }, { status: 502 });
       }
       return NextResponse.json({ success: true, webbronnen: research.citations.length });
+    }
+
+    // Step: MVO-register check
+    if (step === 'mvo_register') {
+      if (!clientId) {
+        return NextResponse.json({ error: 'Client ID verplicht voor MVO-register stap', step }, { status: 400 });
+      }
+
+      // Get client data to extract name and KvK
+      let client: any;
+      if (isUsingSupabase()) {
+        const { data } = await db.from('clients').select('naam, kvk').eq('id', clientId).single();
+        client = data;
+      } else {
+        client = db.prepare('SELECT naam, kvk FROM clients WHERE id = ?').get(clientId);
+      }
+
+      if (!client || !client.naam) {
+        return NextResponse.json({ error: 'Bedrijfsnaam ontbreekt', step }, { status: 400 });
+      }
+
+      // Perform MVO-register check (non-fatal)
+      try {
+        const mvoCheck = await checkMvoRegister(client.naam, client.kvk);
+        await mergeDossier(db, clientId, { mvo_register: mvoCheck });
+        return NextResponse.json({ 
+          success: true, 
+          status: mvoCheck.status,
+          matches: mvoCheck.matches.length 
+        });
+      } catch (error) {
+        console.error('MVO-register check failed (non-fatal):', error);
+        // Store failure status
+        const failedCheck = {
+          status: 'kon_niet_controleren',
+          gezocht_op: client.naam,
+          matches: [],
+          gecontroleerd_op: new Date().toISOString(),
+        };
+        await mergeDossier(db, clientId, { mvo_register: failedCheck });
+        return NextResponse.json({ 
+          success: true, 
+          status: 'kon_niet_controleren',
+          matches: 0
+        });
+      }
     }
 
     // Step 6: Claim check (ECGT + ACM)

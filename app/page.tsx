@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import MainLayout from '@/app/components/MainLayout';
 import { Globe, MapPin, Loader2, Check, AlertTriangle, Search, Building2, FileSearch, Scale, Sparkles } from 'lucide-react';
 
-type StepKey = 'crawl' | 'full' | 'dossier' | 'claims';
+type StepKey = 'crawl' | 'full' | 'dossier' | 'mvo_register' | 'claims';
 type StepState = 'wachten' | 'bezig' | 'klaar' | 'waarschuwing' | 'fout';
 
 const STEPS: Array<{ key: StepKey; label: string; detail: string; icon: any; fatal: boolean }> = [
   { key: 'crawl', label: 'Website verkennen', detail: "Homepage, over ons, duurzaamheid, vacatures, voorwaarden en meer", icon: Globe, fatal: false },
   { key: 'full', label: 'Bedrijfsprofiel opbouwen', detail: 'Naam, KvK, sector, producten, afnemers en certificaten met bronnen', icon: Building2, fatal: true },
   { key: 'dossier', label: 'Diepteonderzoek op het web', detail: 'KvK, certificaatregisters, nieuws, LinkedIn, VSME B1–B11, claims en gaten (duurt het langst)', icon: FileSearch, fatal: false },
+  { key: 'mvo_register', label: 'MVO-register controleren', detail: 'Zoekt bedrijf in database.mvo-register.nl', icon: Search, fatal: false },
   { key: 'claims', label: 'Duurzaamheidsclaims toetsen', detail: 'Claims op de website tegen ECGT en ACM Leidraad', icon: Scale, fatal: false },
 ];
 
@@ -27,7 +28,7 @@ function IntakeForm() {
   const [city, setCity] = useState('');
   const [running, setRunning] = useState(false);
   const [error, setError] = useState('');
-  const [states, setStates] = useState<Record<StepKey, StepState>>({ crawl: 'wachten', full: 'wachten', dossier: 'wachten', claims: 'wachten' });
+  const [states, setStates] = useState<Record<StepKey, StepState>>({ crawl: 'wachten', full: 'wachten', dossier: 'wachten', mvo_register: 'wachten', claims: 'wachten' });
   const [notes, setNotes] = useState<Partial<Record<StepKey, string>>>({});
   const [durations, setDurations] = useState<Partial<Record<StepKey, number>>>({});
   const [activeStart, setActiveStart] = useState<number | null>(null);
@@ -77,7 +78,7 @@ function IntakeForm() {
     setDone(false);
     setNotes({});
     setDurations({});
-    setStates({ crawl: 'wachten', full: 'wachten', dossier: 'wachten', claims: 'wachten' });
+    setStates({ crawl: 'wachten', full: 'wachten', dossier: 'wachten', mvo_register: 'wachten', claims: 'wachten' });
     setRunning(true);
     startRef.current = Date.now();
 
@@ -95,6 +96,7 @@ function IntakeForm() {
           note = data.companyData?.naam ? `${data.companyData.naam}` : 'Profiel aangemaakt';
         }
         if (s.key === 'dossier') note = `${data.webbronnen ?? 0} webbronnen geraadpleegd`;
+        if (s.key === 'mvo_register') note = data.status === 'geregistreerd' ? `${data.matches ?? 0} match(es) gevonden` : data.status === 'niet_gevonden' ? 'Niet geregistreerd' : 'Kon niet controleren';
         if (s.key === 'claims') note = `${data.claims?.length ?? 0} claims gevonden`;
         setNotes((p) => ({ ...p, [s.key]: note }));
         setStates((p) => ({ ...p, [s.key]: 'klaar' }));

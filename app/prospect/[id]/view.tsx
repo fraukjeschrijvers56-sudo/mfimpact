@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Section, Badge, Bronnen, Waarde, FieldGrid, FieldRow, Generic, SourceLink, Stat } from './parts';
 import { ProspectActions } from './actions';
+import { MvoRegisterCard } from './mvo-register-card';
 
 
 const VSME_TITLES: Record<string, string> = {
@@ -40,6 +41,7 @@ export function ProspectView({ client }: { client: any }) {
   // Older records stored the research dossier at top level
   const onderzoek: any = dossier.onderzoek ?? (dossier.profiel || dossier.vsme_basic ? dossier : null);
   const basis: any = dossier.basis || null;
+  const mvoRegister: any = dossier.mvo_register || null;
   const webbronnen: Array<{ url: string; title?: string }> = Array.isArray(dossier.onderzoek_webbronnen) ? dossier.onderzoek_webbronnen : [];
   const paginas: string[] = Array.isArray(dossier.website?.paginas) ? dossier.website.paginas : [];
   const ruleClaims: any[] = Array.isArray(dossier.claimcheck) ? dossier.claimcheck : [];
@@ -135,6 +137,9 @@ export function ProspectView({ client }: { client: any }) {
             )}
           </section>
         )}
+
+        {/* MVO-REGISTER */}
+        <MvoRegisterCard clientId={client.id} data={mvoRegister} />
 
         {/* KANSEN */}
         {kansen.length > 0 && (
