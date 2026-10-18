@@ -45,23 +45,36 @@ export function MvoRegisterCard({
   if (!data) {
     return (
       <div className="rounded-2xl bg-emerald-950/85 border border-emerald-600/40 shadow-xl backdrop-blur-xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-300" />
-            MVO-register
-          </h3>
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div className="flex items-center gap-3">
+            <div className="bg-white rounded-lg p-1.5 h-11 flex items-center">
+              <img 
+                src="/mvo-register-logo.png" 
+                alt="Stichting MVO-Register" 
+                className="h-full w-auto"
+              />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                MVO-register
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-amber-500/20 border border-amber-400/30">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                </span>
+              </h3>
+              <p className="text-sm text-emerald-200/70">
+                Nog niet gecontroleerd
+              </p>
+            </div>
+          </div>
           <button
             onClick={recheck}
             disabled={checking}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-emerald-700/60 text-white hover:bg-emerald-600 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-emerald-700/60 text-white hover:bg-emerald-600 disabled:opacity-50 flex-shrink-0"
           >
             <RefreshCw className={`w-4 h-4 ${checking ? 'animate-spin' : ''}`} />
             {checking ? 'Bezig...' : 'Controleren'}
           </button>
         </div>
-        <p className="text-sm text-emerald-100/70">
-          Nog niet gecontroleerd in MVO-register
-        </p>
       </div>
     );
   }
@@ -99,11 +112,20 @@ export function MvoRegisterCard({
     >
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex items-center gap-3">
-          <div className={`p-3 rounded-xl ${config.bgColor} border ${config.borderColor}`}>
-            <Icon className={`w-6 h-6 ${config.color}`} />
+          <div className="bg-white rounded-lg p-1.5 h-11 flex items-center">
+            <img 
+              src="/mvo-register-logo.png" 
+              alt="Stichting MVO-Register" 
+              className="h-full w-auto"
+            />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white">{config.label}</h3>
+            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              {config.label}
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${config.bgColor} border ${config.borderColor}`}>
+                <Icon className={`w-3.5 h-3.5 ${config.color}`} />
+              </span>
+            </h3>
             <p className="text-sm text-emerald-200/70">
               Gezocht op: {nl(data.gezocht_op)}
             </p>
