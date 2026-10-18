@@ -2,6 +2,7 @@ import Link from 'next/link';
 import MainLayout from '@/app/components/MainLayout';
 import { checkAllThresholds, ESG_DISCLAIMER, ESG_REFERENCE_DATE } from '@/lib/esg-thresholds';
 import { nl, isUnknown, labelize, hostOf, isUrl } from '@/lib/format';
+import { extractDisplayValue, getDisplayText } from '@/lib/field-normalizer';
 import {
   Building2, Globe, MapPin, FileText, ShieldCheck, Link2, Leaf, Award, Megaphone, AlertOctagon,
   Newspaper, Users, Briefcase, HelpCircle, Lightbulb, Scale, Layers, ListChecks, Search, Plus,
@@ -58,11 +59,12 @@ export function ProspectView({ client }: { client: any }) {
   const overig = onderzoek ? Object.keys(onderzoek).filter((k) => !KNOWN_KEYS.includes(k)) : [];
 
   const website = client.website_url || dossier.website?.url || null;
-  const naam = !isUnknown(fieldValue(profiel.handelsnaam)) ? fieldValue(profiel.handelsnaam) : client.naam;
-  const kvk = !isUnknown(fieldValue(profiel.kvk_nummer)) ? fieldValue(profiel.kvk_nummer) : client.kvk;
-  const sector = !isUnknown(fieldValue(profiel.sector)) ? fieldValue(profiel.sector) : client.sector;
-  const plaats = !isUnknown(fieldValue(profiel.hoofdvestiging)) ? fieldValue(profiel.hoofdvestiging) : client.plaats;
-  const samenvatting = onderzoek?.samenvatting || basis?.beschrijving;
+  // Use extractDisplayValue to get clean values from field objects
+  const naam = !isUnknown(fieldValue(profiel.handelsnaam)) ? getDisplayText(profiel.handelsnaam) : getDisplayText(client.naam);
+  const kvk = !isUnknown(fieldValue(profiel.kvk_nummer)) ? getDisplayText(profiel.kvk_nummer) : getDisplayText(client.kvk);
+  const sector = !isUnknown(fieldValue(profiel.sector)) ? getDisplayText(profiel.sector) : getDisplayText(client.sector);
+  const plaats = !isUnknown(fieldValue(profiel.hoofdvestiging)) ? getDisplayText(profiel.hoofdvestiging) : getDisplayText(client.plaats);
+  const samenvatting = getDisplayText(onderzoek?.samenvatting || basis?.beschrijving);
 
   const allClaims = [...claims, ...ruleClaims];
   const roodCount = claims.filter((c) => String(c.beoordeling).toLowerCase() === 'rood').length + ruleClaims.filter((c) => c.color === 'red').length;
@@ -89,16 +91,16 @@ export function ProspectView({ client }: { client: any }) {
           <div className="flex flex-col lg:flex-row lg:items-start gap-6">
             <div className="flex-1 min-w-0 space-y-3">
               <p className="text-sm font-semibold uppercase tracking-widest text-emerald-300">Prospectoverzicht</p>
-              <h1 className="text-3xl md:text-4xl font-bold text-white break-words">{nl(naam)}</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-white break-words">{naam}</h1>
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-emerald-50">
                 {website && <span className="inline-flex items-center gap-1.5"><Globe className="w-4 h-4 text-emerald-300" /><SourceLink url={website} label={hostOf(website)} /></span>}
-                <span className="inline-flex items-center gap-1.5"><MapPin className="w-4 h-4 text-emerald-300" />{nl(plaats)}</span>
-                <span className="inline-flex items-center gap-1.5"><Building2 className="w-4 h-4 text-emerald-300" />{nl(sector)}</span>
-                <span className="inline-flex items-center gap-1.5"><FileText className="w-4 h-4 text-emerald-300" />KvK {nl(kvk)}</span>
-                {!isUnknown(client.aantal_medewerkers) && <span className="inline-flex items-center gap-1.5"><Users className="w-4 h-4 text-emerald-300" />{nl(client.aantal_medewerkers)} medewerkers</span>}
-                {!isUnknown(client.omzet) && <span>Omzet € {nl(client.omzet)}</span>}
+                <span className="inline-flex items-center gap-1.5"><MapPin className="w-4 h-4 text-emerald-300" />{plaats}</span>
+                <span className="inline-flex items-center gap-1.5"><Building2 className="w-4 h-4 text-emerald-300" />{sector}</span>
+                <span className="inline-flex items-center gap-1.5"><FileText className="w-4 h-4 text-emerald-300" />KvK {kvk}</span>
+                {!isUnknown(client.aantal_medewerkers) && <span className="inline-flex items-center gap-1.5"><Users className="w-4 h-4 text-emerald-300" />{getDisplayText(client.aantal_medewerkers)} medewerkers</span>}
+                {!isUnknown(client.omzet) && <span>Omzet € {getDisplayText(client.omzet)}</span>}
               </div>
-              {!isUnknown(samenvatting) && <p className="text-lg leading-relaxed text-white/95 max-w-4xl">{nl(samenvatting)}</p>}
+              {!isUnknown(samenvatting) && <p className="text-lg leading-relaxed text-white/95 max-w-4xl">{samenvatting}</p>}
             </div>
             <div className="flex flex-col gap-2 self-start">
               <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-400 text-emerald-950 font-semibold hover:bg-emerald-300">

@@ -8,6 +8,7 @@ import { checkAllThresholds } from '@/lib/esg-thresholds';
 import { extractAndCheckClaims } from '@/lib/claim-check-rules';
 import { ALL_SCAN_QUESTIONS, getGapPriority, getSuggestedEvidence } from '@/lib/vsme-scan-questions';
 import { performDossierResearch, validateDossierQuotes } from '@/lib/research-engine';
+import { normalizeDossier } from '@/lib/field-normalizer';
 
 // Vercel function timeout
 export const maxDuration = 300; // 5 minutes
@@ -419,6 +420,8 @@ Geef in JSON formaat:
         } catch (e) {
           console.error('Quote validation failed (non-fatal):', e);
         }
+        // Normalize to ensure consistent structure (parse JSON strings, etc.)
+        onderzoek = normalizeDossier(onderzoek);
       }
 
       const patch: Record<string, any> = {

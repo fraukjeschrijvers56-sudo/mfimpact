@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 import MainLayout from '@/app/components/MainLayout';
 import { nl, isUnknown, labelize } from '@/lib/format';
 import {
+  extractDisplayValue,
+  normalizeFieldObject,
+  normalizeDossier,
+} from '@/lib/field-normalizer';
+import {
   Save,
   X,
   ArrowLeft,
@@ -36,13 +41,13 @@ export function ProspectEditor({ client }: { client: any }) {
   dossier = dossier && typeof dossier === 'object' ? dossier : {};
   const onderzoek: any = dossier.onderzoek ?? (dossier.profiel || dossier.vsme_basic ? dossier : {});
 
-  // Basic fields
-  const [naam, setNaam] = useState(client.naam || '');
-  const [website, setWebsite] = useState(client.website_url || '');
-  const [plaats, setPlaats] = useState(client.plaats || '');
-  const [sector, setSector] = useState(client.sector || '');
-  const [kvk, setKvk] = useState(client.kvk || '');
-  const [samenvatting, setSamenvatting] = useState(onderzoek.samenvatting || '');
+  // Basic fields - extract display values from field objects
+  const [naam, setNaam] = useState(String(extractDisplayValue(client.naam) || ''));
+  const [website, setWebsite] = useState(String(extractDisplayValue(client.website_url) || ''));
+  const [plaats, setPlaats] = useState(String(extractDisplayValue(client.plaats) || ''));
+  const [sector, setSector] = useState(String(extractDisplayValue(client.sector) || ''));
+  const [kvk, setKvk] = useState(String(extractDisplayValue(client.kvk) || ''));
+  const [samenvatting, setSamenvatting] = useState(String(extractDisplayValue(onderzoek.samenvatting) || ''));
 
   // Dossier arrays
   const [personen, setPersonen] = useState<DossierItem[]>(
@@ -69,11 +74,20 @@ export function ProspectEditor({ client }: { client: any }) {
   const saveChanges = async () => {
     setSaving(true);
     try {
-      const updatedDossier = {
+      // Preserve field object structure if it exists
+      const updateFieldValue = (original: any, newValue: string) => {
+        const fieldObj = normalizeFieldObject(original);
+        return {
+          ...fieldObj,
+          waarde: newValue || fieldObj.waarde,
+        };
+      };
+
+      const updatedDossier = normalizeDossier({
         ...dossier,
         onderzoek: {
           ...onderzoek,
-          samenvatting,
+          samenvatting: samenvatting || onderzoek.samenvatting,
           personen,
           certificaten,
           nieuws,
@@ -82,7 +96,7 @@ export function ProspectEditor({ client }: { client: any }) {
           kansen_gesprek: kansen,
         },
         _handmatig_aangepast: true,
-      };
+      });
 
       const res = await fetch(`/api/clients/${client.id}`, {
         method: 'PATCH',

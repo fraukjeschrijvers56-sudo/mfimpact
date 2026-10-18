@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { nl, hostOf } from '@/lib/format';
+import { getDisplayText } from '@/lib/field-normalizer';
 import {
   ChevronRight,
   Plus,
@@ -35,10 +36,11 @@ export function ProspectsClient({ initialProspects }: { initialProspects: Prospe
   const filteredProspects = prospects.filter((p) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
+    // Use getDisplayText to handle field objects
     return (
-      p.naam?.toLowerCase().includes(q) ||
-      p.sector?.toLowerCase().includes(q) ||
-      p.plaats?.toLowerCase().includes(q) ||
+      getDisplayText(p.naam).toLowerCase().includes(q) ||
+      getDisplayText(p.sector).toLowerCase().includes(q) ||
+      getDisplayText(p.plaats).toLowerCase().includes(q) ||
       hostOf(p.website_url || '').toLowerCase().includes(q)
     );
   });
@@ -197,10 +199,10 @@ export function ProspectsClient({ initialProspects }: { initialProspects: Prospe
               className="w-4 h-4 rounded border-emerald-600 bg-emerald-900/60 text-emerald-400 focus:ring-emerald-500"
             />
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-white truncate">{nl(r.naam)}</p>
+              <p className="font-semibold text-white truncate">{getDisplayText(r.naam)}</p>
               <p className="text-sm text-emerald-100/80 truncate">
-                {r.website_url ? hostOf(r.website_url) : 'website onbekend'} · {nl(r.plaats)} ·{' '}
-                {nl(r.sector)}
+                {r.website_url ? hostOf(r.website_url) : 'website onbekend'} · {getDisplayText(r.plaats)} ·{' '}
+                {getDisplayText(r.sector)}
               </p>
             </div>
             <span className="text-xs text-emerald-200/80 tabular-nums hidden sm:block">

@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { ExternalLink, CheckCircle2, AlertTriangle, HelpCircle, Info } from 'lucide-react';
 import { nl, isUnknown, labelize, hostOf, isUrl } from '@/lib/format';
+import { extractDisplayValue, isFieldObject, parseFieldValue, humanizeKey } from '@/lib/field-normalizer';
 
 export function Section({ id, title, icon, count, children, className = '' }: { id?: string; title: string; icon?: ReactNode; count?: number; children: ReactNode; className?: string }) {
   return (
@@ -79,12 +80,43 @@ export function Bronnen({ bronnen }: { bronnen: any }) {
   );
 }
 
-/** Render a waarde which might be text, number, list or object */
+/** Render a waarde which might be text, number, list, field object, or nested object */
 export function Waarde({ v }: { v: unknown }) {
-  if (isUnknown(v)) return <span className="text-slate-300 italic">onbekend</span>;
-  if (Array.isArray(v)) {
-    const items = v.filter((x) => !isUnknown(x));
-    if (items.every((x) => typeof x !== 'object')) {
+  // Parse if it's a JSON string
+  const parsed = parseFieldValue(v);
+  
+  // If it's a field object, extract and display properly
+  if (isFieldObject(parsed)) {
+    const displayValue = extractDisplayValue(parsed);
+    const status = parsed.status;
+    const toelichting = parsed.toelichting;
+    const bronnen = parsed.bronnen;
+    
+    return (
+      <div className="space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <Waarde v={displayValue} />
+          {status && status !== 'onbekend' && (
+            <span className="inline-block text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-700/60 text-emerald-100">
+              {humanizeKey(status)}
+            </span>
+          )}
+        </div>
+        {toelichting && !isUnknown(toelichting) && (
+          <p className="text-sm text-emerald-100/70">{nl(toelichting)}</p>
+        )}
+        {bronnen && Array.isArray(bronnen) && bronnen.length > 0 && (
+          <Bronnen bronnen={bronnen} />
+        )}
+      </div>
+    );
+  }
+  
+  if (isUnknown(parsed)) return <span className="text-slate-300 italic">onbekend</span>;
+  
+  if (Array.isArray(parsed)) {
+    const items = parsed.filter((x) => !isUnknown(x));
+    if (items.every((x) => !isFieldObject(parseFieldValue(x)) && typeof parseFieldValue(x) !== 'object')) {
       return (
         <div className="flex flex-wrap gap-1.5">
           {items.map((x, i) => (
@@ -96,46 +128,49 @@ export function Waarde({ v }: { v: unknown }) {
     return (
       <div className="space-y-2">
         {items.map((x, i) => (
-          <div key={i} className="rounded-lg bg-emerald-900/50 p-2"><Generic value={x} /></div>
+          <div key={i} className="rounded-lg bg-emerald-900/50 p-2"><Waarde v={x} /></div>
         ))}
       </div>
     );
   }
-  if (typeof v === 'object') return <Generic value={v} />;
-  if (isUrl(v)) return <SourceLink url={v} label={v} />;
-  return <span className="text-white whitespace-pre-line">{nl(v)}</span>;
-}
-
-/** Is this an evidence field object {waarde, status, bronnen}? */
-export function isField(v: any): boolean {
-  return v && typeof v === 'object' && !Array.isArray(v) && ('waarde' in v || 'bronnen' in v || 'status' in v);
+  
+  if (typeof parsed === 'object' && parsed !== null) return <Generic value={parsed} />;
+  if (isUrl(parsed)) return <SourceLink url={parsed} label={parsed} />;
+  return <span className="text-white whitespace-pre-line">{nl(parsed)}</span>;
 }
 
 /** A labelled field with status and sources */
 export function FieldRow({ label, field }: { label: string; field: any }) {
-  if (!isField(field)) {
+  // Parse if JSON string
+  const parsed = parseFieldValue(field);
+  
+  // Simple non-field-object value
+  if (!isFieldObject(parsed)) {
     return (
       <div className="rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-3">
         <dt className="text-xs font-semibold uppercase tracking-wide text-emerald-300 mb-1">{label}</dt>
-        <dd><Waarde v={field} /></dd>
+        <dd><Waarde v={parsed} /></dd>
       </div>
     );
   }
-  const waarde = field.waarde ?? field.samenvatting ?? field.value;
-  const extraKeys = Object.keys(field).filter((k) => !['waarde', 'status', 'bronnen', 'toelichting', 'samenvatting', 'value', 'titel'].includes(k));
+  
+  // Field object - render with status badge, sources, etc.
+  const waarde = parsed.waarde ?? (parsed as any).samenvatting ?? parsed.value;
+  const extraKeys = Object.keys(parsed).filter((k) => !['waarde', 'status', 'bronnen', 'toelichting', 'samenvatting', 'value', 'titel'].includes(k));
+  
   return (
     <div className="rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-3">
       <dt className="flex items-center justify-between gap-2 mb-1">
         <span className="text-xs font-semibold uppercase tracking-wide text-emerald-300">{label}</span>
-        {field.status !== undefined && <Badge value={field.status} />}
+        {parsed.status !== undefined && <Badge value={parsed.status} />}
       </dt>
       <dd className="space-y-1">
         <Waarde v={waarde} />
-        {!isUnknown(field.toelichting) && <p className="text-sm text-emerald-100/80 flex gap-1"><Info className="w-4 h-4 mt-0.5 flex-shrink-0" />{nl(field.toelichting)}</p>}
+        {!isUnknown(parsed.toelichting) && <p className="text-sm text-emerald-100/80 flex gap-1"><Info className="w-4 h-4 mt-0.5 flex-shrink-0" />{nl(parsed.toelichting)}</p>}
         {extraKeys.map((k) => (
-          <p key={k} className="text-sm"><span className="text-emerald-300">{labelize(k)}: </span><Waarde v={field[k]} /></p>
+          <p key={k} className="text-sm"><span className="text-emerald-300">{labelize(k)}: </span><Waarde v={(parsed as any)[k]} /></p>
         ))}
-        <Bronnen bronnen={field.bronnen} />
+        {parsed.bronnen && Array.isArray(parsed.bronnen) && <Bronnen bronnen={parsed.bronnen} />}
       </dd>
     </div>
   );
@@ -155,7 +190,7 @@ export function FieldGrid({ obj, cols = 2, skip = [] }: { obj: any; cols?: 2 | 3
 
 /** Generic recursive renderer for anything else in the dossier */
 export function Generic({ value }: { value: any }) {
-  if (isField(value)) return <FieldRow label="" field={value} />;
+  if (isFieldObject(parseFieldValue(value))) return <FieldRow label="" field={value} />;
   if (Array.isArray(value)) return <Waarde v={value} />;
   if (value && typeof value === 'object') {
     const keys = Object.keys(value);

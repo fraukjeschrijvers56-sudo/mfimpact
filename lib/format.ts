@@ -1,22 +1,23 @@
 /**
  * Display helpers: never show "unknown"/empty values, always "onbekend".
  */
+import { extractDisplayValue, getDisplayText, isFieldObject, parseFieldValue } from './field-normalizer';
+
 const UNKNOWN_VALUES = new Set(['unknown', 'onbekend', 'n/a', 'na', 'none', 'null', 'undefined', '-', 'niet gevonden', 'not found', '']);
 
 export function isUnknown(v: unknown): boolean {
-  if (v === null || v === undefined) return true;
-  if (typeof v === 'string') return UNKNOWN_VALUES.has(v.trim().toLowerCase());
-  if (Array.isArray(v)) return v.length === 0 || v.every(isUnknown);
+  // First extract display value if it's a field object
+  const displayValue = extractDisplayValue(v);
+  
+  if (displayValue === null || displayValue === undefined) return true;
+  if (typeof displayValue === 'string') return UNKNOWN_VALUES.has(displayValue.trim().toLowerCase());
+  if (Array.isArray(displayValue)) return displayValue.length === 0 || displayValue.every(isUnknown);
   return false;
 }
 
 export function nl(v: unknown): string {
-  if (isUnknown(v)) return 'onbekend';
-  if (typeof v === 'number') return v.toLocaleString('nl-NL');
-  if (typeof v === 'boolean') return v ? 'ja' : 'nee';
-  if (Array.isArray(v)) return v.filter((x) => !isUnknown(x)).map(nl).join(', ');
-  if (typeof v === 'object') return JSON.stringify(v);
-  return String(v).replace(/\bunknown\b/gi, 'onbekend');
+  // Use the normalizer to get display text
+  return getDisplayText(v);
 }
 
 export function labelize(key: string): string {

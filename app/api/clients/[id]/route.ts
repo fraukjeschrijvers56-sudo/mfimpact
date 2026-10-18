@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, isUsingSupabase } from '@/lib/db';
 import { checkAuth } from '@/lib/auth-middleware';
+import { normalizeDossier } from '@/lib/field-normalizer';
 
 // GET single client
 export async function GET(
@@ -52,14 +53,15 @@ export async function PATCH(
       const updateData: any = { ...body, updated_at: new Date().toISOString() };
       
       if (body.dossier) {
-        // Merge the handmatig_aangepast flag into the dossier
+        // Merge and normalize the dossier (parse JSON strings, ensure consistent structure)
         const existing = await db.from('clients').select('dossier').eq('id', id).single();
         const currentDossier = existing.data?.dossier || {};
-        updateData.dossier = {
+        const mergedDossier = {
           ...currentDossier,
           ...body.dossier,
           _handmatig_aangepast: true,
         };
+        updateData.dossier = normalizeDossier(mergedDossier);
       }
 
       const { data, error } = await db
