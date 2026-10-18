@@ -49,17 +49,25 @@ export default function LoginPage() {
           {/* Logo and Title */}
           <div className="text-center mb-8 space-y-4">
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-500 shadow-2xl shadow-teal-500/50"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+              className="flex justify-center mb-4"
             >
-              <Lock className="w-10 h-10 text-white" />
+              <img 
+                src="/logo-full-white.png" 
+                alt="MF Impact" 
+                className="h-20 w-auto"
+              />
             </motion.div>
-            <div>
-              <h1 className="text-4xl font-bold text-white mb-2">MVO-bewijs werkbank</h1>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <h1 className="text-3xl font-bold text-white mb-2">MVO-bewijs werkbank</h1>
               <p className="text-teal-200 text-lg">ESG-bewijs voor het Nederlandse MKB</p>
-            </div>
+            </motion.div>
           </div>
 
           {/* Login Form */}

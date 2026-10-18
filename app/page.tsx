@@ -131,6 +131,15 @@ function IntakeForm() {
   return (
     <MainLayout>
       <div className="max-w-3xl mx-auto pt-6 md:pt-12 space-y-8">
+        {/* Logo/brand subtle at top */}
+        <div className="flex justify-center mb-4">
+          <img 
+            src="/logo-full-white.png" 
+            alt="MF Impact" 
+            className="h-12 w-auto opacity-80"
+          />
+        </div>
+        
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-sm">
             <Sparkles className="w-4 h-4" /> AI-diepteonderzoek met bronnen

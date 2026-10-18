@@ -26,11 +26,14 @@ export default function TopMenu() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-500 shadow-lg"></div>
-              <div>
-                <h1 className="text-lg font-bold text-white">MVO-bewijs werkbank</h1>
-                <p className="text-xs text-teal-200 -mt-0.5">ESG-bewijs voor MKB</p>
+            <Link href="/" className="flex items-center gap-3">
+              <img 
+                src="/logo-full-white.png" 
+                alt="MF Impact" 
+                className="h-9 w-auto"
+              />
+              <div className="border-l border-emerald-600/50 pl-3">
+                <p className="text-xs font-medium text-emerald-200/90 leading-tight">MVO-bewijs<br/>werkbank</p>
               </div>
             </Link>
 
