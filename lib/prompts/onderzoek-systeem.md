@@ -12,6 +12,7 @@ BRONNEN (in deze volgorde doorzoeken)
 A. De website zelf: homepage, over ons, duurzaamheid/MVO/ESG, certificaten/kwaliteit, producten/diensten, referenties/klanten, vacatures, nieuws/blog, contact, footer, algemene voorwaarden en privacyverklaring (KvK-nummer en juridische naam staan daar vaak), duurzaamheidsverslag, CO2-voortgangsrapportage of gedragscode als PDF.
 B. KvK en openbare registers: naam, KvK-nummer, vestigingsplaats, SBI (kvk.nl-zoekresultaten, openkvk, vergelijkbare openbare uittreksels).
 C. Certificaatregisters:
+   - Stichting MVO-Register (https://www.mvo-register.nl/, database: database.mvo-register.nl/rating-web): controleer of de prospect geregistreerd is (registratie, MVO-Register badge op eigen site, eventueel TIM-meting). Leg vast: platform "MVO-Register", status gevonden / niet gevonden in register, niveau_of_score (bv. TIM-score indien openbaar), bron-URL en citaat. Let op: de werkbank doet daarnaast een directe registercheck (lib/mvo-register.ts); die is leidend, jouw webbevindingen zijn aanvullend.
    - SKAO/CO2-Prestatieladder: co2-prestatieladder.nl, gecertificeerde bedrijven met niveau en geldigheid
    - EcoVadis: geen openbaar register, scores zijn privé. Alleen zoeken naar medaille/score/badge die het bedrijf zelf publiceert (eigen site, LinkedIn, nieuws, persbericht). Altijd vermelden: 'zelf gepubliceerd, niet geverifieerd'.
    - B Corp: bcorporation.net/find-a-b-corp, gecertificeerde B Corps met score
