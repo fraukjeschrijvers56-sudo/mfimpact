@@ -237,30 +237,34 @@ export function ProspectsClient({ initialProspects }: { initialProspects: Prospe
               <div className="flex items-center gap-1">
                 <Link
                   href={`/prospect/${r.id}`}
-                  className="p-2 rounded-lg bg-emerald-800/60 text-emerald-100 hover:bg-emerald-700 transition-colors"
+                  className="p-2 rounded-lg bg-sky-700/60 text-sky-100 hover:bg-sky-600 transition-colors"
                   title="Bekijken"
+                  aria-label="Bekijken"
                 >
                   <Eye className="w-4 h-4" />
                 </Link>
                 <Link
                   href={`/prospect/${r.id}/edit`}
-                  className="p-2 rounded-lg bg-emerald-800/60 text-emerald-100 hover:bg-emerald-700 transition-colors"
+                  className="p-2 rounded-lg bg-amber-600/60 text-amber-50 hover:bg-amber-500 transition-colors"
                   title="Bewerken"
+                  aria-label="Bewerken"
                 >
                   <Pencil className="w-4 h-4" />
                 </Link>
                 <button
                   onClick={() => reAnalyze(r)}
-                  className="p-2 rounded-lg bg-sky-800/60 text-sky-100 hover:bg-sky-700 transition-colors"
+                  className="p-2 rounded-lg bg-violet-700/60 text-violet-100 hover:bg-violet-600 transition-colors"
                   title="Opnieuw onderzoeken"
+                  aria-label="Opnieuw onderzoeken"
                 >
                   <RefreshCw className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => deleteProspect(r.id)}
                   disabled={deleting === r.id}
-                  className="p-2 rounded-lg bg-red-800/60 text-red-100 hover:bg-red-700 transition-colors disabled:opacity-50"
+                  className="p-2 rounded-lg bg-red-700/70 text-red-100 hover:bg-red-600 transition-colors disabled:opacity-50"
                   title="Verwijderen"
+                  aria-label="Verwijderen"
                 >
                   {deleting === r.id ? (
                     <X className="w-4 h-4 animate-spin" />

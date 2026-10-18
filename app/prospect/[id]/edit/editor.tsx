@@ -166,7 +166,9 @@ export function ProspectEditor({ client }: { client: any }) {
               <button
                 onClick={deleteProspect}
                 disabled={deleting}
-                className="px-4 py-2 rounded-lg bg-red-500/80 text-white hover:bg-red-500 disabled:opacity-50 inline-flex items-center gap-2"
+                className="px-4 py-2 rounded-lg bg-red-700/70 text-red-100 hover:bg-red-600 disabled:opacity-50 inline-flex items-center gap-2 font-medium"
+                title="Verwijderen"
+                aria-label="Verwijderen"
               >
                 <Trash2 className="w-4 h-4" />
                 {deleting ? 'Bezig...' : 'Verwijderen'}
@@ -175,6 +177,8 @@ export function ProspectEditor({ client }: { client: any }) {
                 onClick={saveChanges}
                 disabled={saving}
                 className="px-4 py-2 rounded-lg bg-emerald-400 text-emerald-950 hover:bg-emerald-300 disabled:opacity-50 font-semibold inline-flex items-center gap-2"
+                title="Opslaan"
+                aria-label="Opslaan"
               >
                 <Save className="w-4 h-4" />
                 {saving ? 'Opslaan...' : 'Opslaan'}
