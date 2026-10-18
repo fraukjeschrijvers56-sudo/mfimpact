@@ -23,6 +23,7 @@ interface Prospect {
   plaats?: string;
   sector?: string;
   created_at?: string;
+  dossier?: any;
 }
 
 export function ProspectsClient({ initialProspects }: { initialProspects: Prospect[] }) {
@@ -187,68 +188,90 @@ export function ProspectsClient({ initialProspects }: { initialProspects: Prospe
             {searchQuery ? 'Geen prospects gevonden.' : 'Nog geen prospects onderzocht.'}
           </div>
         )}
-        {filteredProspects.map((r) => (
-          <div
-            key={r.id}
-            className="flex items-center gap-4 p-4 hover:bg-emerald-900/60 transition-colors"
-          >
-            <input
-              type="checkbox"
-              checked={selectedIds.has(r.id)}
-              onChange={() => toggleSelect(r.id)}
-              className="w-4 h-4 rounded border-emerald-600 bg-emerald-900/60 text-emerald-400 focus:ring-emerald-500"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-white truncate">{getDisplayText(r.naam)}</p>
-              <p className="text-sm text-emerald-100/80 truncate">
-                {r.website_url ? hostOf(r.website_url) : 'website onbekend'} · {getDisplayText(r.plaats)} ·{' '}
-                {getDisplayText(r.sector)}
-              </p>
+        {filteredProspects.map((r) => {
+          let dossier: any = r.dossier;
+          if (typeof dossier === 'string') {
+            try { dossier = JSON.parse(dossier); } catch { dossier = {}; }
+          }
+          dossier = dossier && typeof dossier === 'object' ? dossier : {};
+          const mvoRegister: any = dossier.mvo_register || null;
+          
+          return (
+            <div
+              key={r.id}
+              className="flex items-center gap-4 p-4 hover:bg-emerald-900/60 transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={selectedIds.has(r.id)}
+                onChange={() => toggleSelect(r.id)}
+                className="w-4 h-4 rounded border-emerald-600 bg-emerald-900/60 text-emerald-400 focus:ring-emerald-500"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-white truncate">{getDisplayText(r.naam)}</p>
+                  {mvoRegister && (
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                      mvoRegister.status === 'geregistreerd' ? 'bg-green-900/60 text-green-200 border border-green-600/50' :
+                      mvoRegister.status === 'niet_gevonden' ? 'bg-red-900/60 text-red-200 border border-red-600/50' :
+                      'bg-amber-900/60 text-amber-200 border border-amber-600/50'
+                    }`}>
+                      {mvoRegister.status === 'geregistreerd' && <img src="/mvo-good.png" alt="" className="w-3 h-3" />}
+                      {mvoRegister.status === 'niet_gevonden' && <img src="/mvo-bad.png" alt="" className="w-3 h-3" />}
+                      MVO
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-emerald-100/80 truncate">
+                  {r.website_url ? hostOf(r.website_url) : 'website onbekend'} · {getDisplayText(r.plaats)} ·{' '}
+                  {getDisplayText(r.sector)}
+                </p>
+              </div>
+              <span className="text-xs text-emerald-200/80 tabular-nums hidden sm:block">
+                {r.created_at
+                  ? new Date(r.created_at).toLocaleDateString('nl-NL', {
+                      timeZone: 'Europe/Amsterdam',
+                    })
+                  : ''}
+              </span>
+              <div className="flex items-center gap-1">
+                <Link
+                  href={`/prospect/${r.id}`}
+                  className="p-2 rounded-lg bg-emerald-800/60 text-emerald-100 hover:bg-emerald-700 transition-colors"
+                  title="Bekijken"
+                >
+                  <Eye className="w-4 h-4" />
+                </Link>
+                <Link
+                  href={`/prospect/${r.id}/edit`}
+                  className="p-2 rounded-lg bg-emerald-800/60 text-emerald-100 hover:bg-emerald-700 transition-colors"
+                  title="Bewerken"
+                >
+                  <Pencil className="w-4 h-4" />
+                </Link>
+                <button
+                  onClick={() => reAnalyze(r)}
+                  className="p-2 rounded-lg bg-sky-800/60 text-sky-100 hover:bg-sky-700 transition-colors"
+                  title="Opnieuw onderzoeken"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => deleteProspect(r.id)}
+                  disabled={deleting === r.id}
+                  className="p-2 rounded-lg bg-red-800/60 text-red-100 hover:bg-red-700 transition-colors disabled:opacity-50"
+                  title="Verwijderen"
+                >
+                  {deleting === r.id ? (
+                    <X className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
-            <span className="text-xs text-emerald-200/80 tabular-nums hidden sm:block">
-              {r.created_at
-                ? new Date(r.created_at).toLocaleDateString('nl-NL', {
-                    timeZone: 'Europe/Amsterdam',
-                  })
-                : ''}
-            </span>
-            <div className="flex items-center gap-1">
-              <Link
-                href={`/prospect/${r.id}`}
-                className="p-2 rounded-lg bg-emerald-800/60 text-emerald-100 hover:bg-emerald-700 transition-colors"
-                title="Bekijken"
-              >
-                <Eye className="w-4 h-4" />
-              </Link>
-              <Link
-                href={`/prospect/${r.id}/edit`}
-                className="p-2 rounded-lg bg-emerald-800/60 text-emerald-100 hover:bg-emerald-700 transition-colors"
-                title="Bewerken"
-              >
-                <Pencil className="w-4 h-4" />
-              </Link>
-              <button
-                onClick={() => reAnalyze(r)}
-                className="p-2 rounded-lg bg-sky-800/60 text-sky-100 hover:bg-sky-700 transition-colors"
-                title="Opnieuw onderzoeken"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => deleteProspect(r.id)}
-                disabled={deleting === r.id}
-                className="p-2 rounded-lg bg-red-800/60 text-red-100 hover:bg-red-700 transition-colors disabled:opacity-50"
-                title="Verwijderen"
-              >
-                {deleting === r.id ? (
-                  <X className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Trash2 className="w-4 h-4" />
-                )}
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

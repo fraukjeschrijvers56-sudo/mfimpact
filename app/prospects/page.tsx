@@ -9,10 +9,10 @@ export default async function ProspectsPage() {
   let rows: any[] = [];
   try {
     if (isUsingSupabase()) {
-      const { data } = await db.from('clients').select('id, naam, website_url, plaats, sector, created_at').order('created_at', { ascending: false }).limit(200);
+      const { data } = await db.from('clients').select('id, naam, website_url, plaats, sector, created_at, dossier').order('created_at', { ascending: false }).limit(200);
       rows = data || [];
     } else {
-      rows = db.prepare('SELECT id, naam, website_url, plaats, sector, created_at FROM clients ORDER BY created_at DESC').all();
+      rows = db.prepare('SELECT id, naam, website_url, plaats, sector, created_at, dossier FROM clients ORDER BY created_at DESC').all();
     }
   } catch (e) {
     console.error('Prospects list error:', e);

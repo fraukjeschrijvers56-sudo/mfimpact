@@ -111,13 +111,35 @@ export function ProspectView({ client }: { client: any }) {
               <ProspectActions client={client} />
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mt-6">
             <Stat label="Webbronnen" value={webbronnen.length + doorzocht.length} />
             <Stat label="Pagina's gelezen" value={paginas.length} />
             <Stat label="VSME aanwezig" value={vsmeEntries.length ? `${vsmeAanwezig}/${vsmeEntries.length}` : 'onbekend'} tone="good" />
             <Stat label="Certificaten" value={certificaten.length || (basis?.certificaten?.length ?? 0)} />
             <Stat label="Rode claims" value={roodCount} tone={roodCount ? 'bad' : 'default'} />
             <Stat label="Gaten (hoog)" value={`${gaten.length} (${hoogGaten})`} tone={hoogGaten ? 'warn' : 'default'} />
+            {mvoRegister && (
+              <div className="rounded-xl bg-emerald-900/50 border border-emerald-600/40 p-3 flex flex-col items-center justify-center gap-1">
+                <div className="flex items-center gap-1.5">
+                  {mvoRegister.status === 'geregistreerd' && <img src="/mvo-good.png" alt="" className="w-5 h-5" />}
+                  {mvoRegister.status === 'niet_gevonden' && <img src="/mvo-bad.png" alt="" className="w-5 h-5" />}
+                  <span className={`text-xs font-semibold uppercase tracking-wider ${
+                    mvoRegister.status === 'geregistreerd' ? 'text-green-300' :
+                    mvoRegister.status === 'niet_gevonden' ? 'text-red-300' :
+                    'text-amber-300'
+                  }`}>MVO-register</span>
+                </div>
+                <p className={`text-lg font-bold ${
+                  mvoRegister.status === 'geregistreerd' ? 'text-green-200' :
+                  mvoRegister.status === 'niet_gevonden' ? 'text-red-200' :
+                  'text-amber-200'
+                }`}>
+                  {mvoRegister.status === 'geregistreerd' ? '✓ Ja' :
+                   mvoRegister.status === 'niet_gevonden' ? '✗ Nee' :
+                   '? Onbekend'}
+                </p>
+              </div>
+            )}
           </div>
           <nav className="flex flex-wrap gap-2 mt-6">
             {nav.map(([href, label]) => (
