@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import MainLayout from '../components/MainLayout';
+import GlassWindow from '../components/GlassWindow';
 
 interface Question {
   key: string;
@@ -123,10 +124,13 @@ function ScanPageContent() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Scan & gatanalyse</h1>
-          <p className="mt-2 text-gray-600">Inventariseer marktvraag en operationeel bewijs</p>
-        </div>
+        {/* Header in glass card for readability */}
+        <GlassWindow>
+          <div>
+            <h1 className="text-3xl font-bold text-white">Scan & gatanalyse</h1>
+            <p className="mt-2 text-white/70">Inventariseer marktvraag en operationeel bewijs</p>
+          </div>
+        </GlassWindow>
 
         <div className="bg-white shadow rounded-lg p-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">

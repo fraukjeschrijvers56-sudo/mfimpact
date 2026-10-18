@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import MainLayout from '../components/MainLayout';
+import GlassWindow from '../components/GlassWindow';
 import Link from 'next/link';
 
 export default function WetgevingPage() {
@@ -34,18 +35,21 @@ export default function WetgevingPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Wetgeving & drempels</h1>
-            <p className="mt-2 text-gray-600">Overzicht van relevante regelgeving voor Nederlandse MKB</p>
+        {/* Header in glass card for readability */}
+        <GlassWindow>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-white">Wetgeving & drempels</h1>
+              <p className="mt-2 text-white/70">Overzicht van relevante regelgeving voor Nederlandse MKB</p>
+            </div>
+            <Link
+              href="/wetgeving/drempelcheck"
+              className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 font-medium transition-colors"
+            >
+              Drempelcheck uitvoeren
+            </Link>
           </div>
-          <Link
-            href="/wetgeving/drempelcheck"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
-          >
-            Drempelcheck uitvoeren
-          </Link>
-        </div>
+        </GlassWindow>
 
         <div className="bg-white shadow rounded-lg p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

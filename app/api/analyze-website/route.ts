@@ -608,7 +608,7 @@ Vul alle velden in met bronnen waar mogelijk.`,
     return NextResponse.json(
       { 
         error: errorMessage,
-        step: 'unknown',
+        step: 'onbekend',
         details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
       },
       { status: 500 }

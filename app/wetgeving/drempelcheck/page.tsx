@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import MainLayout from '@/app/components/MainLayout';
+import GlassWindow from '@/app/components/GlassWindow';
 
 export default function DrempelcheckPage() {
   const [clients, setClients] = useState<any[]>([]);
@@ -28,12 +29,15 @@ export default function DrempelcheckPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Drempelcheck</h1>
-          <p className="mt-2 text-gray-600">
-            Controleer welke wetgeving direct of indirect van toepassing is op een klant
-          </p>
-        </div>
+        {/* Header in glass card for readability */}
+        <GlassWindow>
+          <div>
+            <h1 className="text-3xl font-bold text-white">Drempelcheck</h1>
+            <p className="mt-2 text-white/70">
+              Controleer welke wetgeving direct of indirect van toepassing is op een klant
+            </p>
+          </div>
+        </GlassWindow>
 
         <div className="bg-white shadow rounded-lg p-6">
           <div className="space-y-4">

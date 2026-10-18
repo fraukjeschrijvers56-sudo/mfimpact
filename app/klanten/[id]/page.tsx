@@ -1,4 +1,5 @@
 import MainLayout from '@/app/components/MainLayout';
+import GlassWindow from '@/app/components/GlassWindow';
 import Link from 'next/link';
 import { getDb, isUsingSupabase } from '@/lib/db';
 import { notFound } from 'next/navigation';
@@ -83,26 +84,29 @@ export default async function KlantDetailPage({ params }: { params: Promise<{ id
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{(client as any).naam}</h1>
-            <p className="mt-2 text-gray-600">Klantdossier en voortgang</p>
+        {/* Header in glass card for readability */}
+        <GlassWindow>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-white">{(client as any).naam}</h1>
+              <p className="mt-2 text-white/70">Klantdossier en voortgang</p>
+            </div>
+            <div className="flex space-x-3">
+              <Link
+                href={`/scan?client=${id}`}
+                className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 font-medium transition-colors"
+              >
+                Scan starten
+              </Link>
+              <Link
+                href={`/klanten/${id}/edit`}
+                className="bg-white/10 text-white px-4 py-2 rounded-lg hover:bg-white/20 font-medium transition-colors border border-white/20"
+              >
+                Bewerken
+              </Link>
+            </div>
           </div>
-          <div className="flex space-x-3">
-            <Link
-              href={`/scan?client=${id}`}
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 font-medium"
-            >
-              Scan starten
-            </Link>
-            <Link
-              href={`/klanten/${id}/edit`}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
-            >
-              Bewerken
-            </Link>
-          </div>
-        </div>
+        </GlassWindow>
 
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Klantgegevens</h2>

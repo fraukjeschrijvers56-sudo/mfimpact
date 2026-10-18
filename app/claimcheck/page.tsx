@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import MainLayout from '../components/MainLayout';
+import GlassWindow from '../components/GlassWindow';
 
 export default function ClaimcheckPage() {
   const [clients, setClients] = useState<any[]>([]);
@@ -93,12 +94,15 @@ export default function ClaimcheckPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Claimcheck</h1>
-          <p className="mt-2 text-gray-600">
-            Controleer groene claims op greenwashing-risico's
-          </p>
-        </div>
+        {/* Header in glass card for readability */}
+        <GlassWindow>
+          <div>
+            <h1 className="text-3xl font-bold text-white">Claimcheck</h1>
+            <p className="mt-2 text-white/70">
+              Controleer groene claims op greenwashing-risico's
+            </p>
+          </div>
+        </GlassWindow>
 
         <div className="bg-white shadow rounded-lg p-6 space-y-4">
           <div>

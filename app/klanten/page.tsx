@@ -1,4 +1,5 @@
 import MainLayout from '../components/MainLayout';
+import GlassWindow from '../components/GlassWindow';
 import Link from 'next/link';
 import { getDb, isUsingSupabase } from '@/lib/db';
 
@@ -40,18 +41,21 @@ export default async function KlantenPage() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Klanten</h1>
-            <p className="mt-2 text-gray-600">Beheer klantdossiers en voortgang</p>
+        {/* Header in glass card for readability */}
+        <GlassWindow>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-white">Klanten</h1>
+              <p className="mt-2 text-white/70">Beheer klantdossiers en voortgang</p>
+            </div>
+            <Link
+              href="/klanten/nieuw"
+              className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 font-medium transition-colors"
+            >
+              + Nieuwe klant
+            </Link>
           </div>
-          <Link
-            href="/klanten/nieuw"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium"
-          >
-            + Nieuwe klant
-          </Link>
-        </div>
+        </GlassWindow>
 
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
