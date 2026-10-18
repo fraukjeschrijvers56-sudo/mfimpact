@@ -7,7 +7,7 @@ import { getDb, isUsingSupabase } from '@/lib/db';
 import { checkAllThresholds } from '@/lib/esg-thresholds';
 import { extractAndCheckClaims } from '@/lib/claim-check-rules';
 import { ALL_SCAN_QUESTIONS, getGapPriority, getSuggestedEvidence } from '@/lib/vsme-scan-questions';
-import { performWebSearchResearch, validateDossierQuotes } from '@/lib/research-engine';
+import { performDossierResearch, validateDossierQuotes } from '@/lib/research-engine';
 
 // Vercel function timeout
 export const maxDuration = 300; // 5 minutes
@@ -119,26 +119,26 @@ async function researchCompanyWithWebSearch(companyName: string, city: string): 
   }
 
   try {
-    // Use OpenAI with web_search_preview tool
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // OpenAI Responses API with the web_search tool
+    const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'user',
-            content: `Onderzoek dit Nederlandse bedrijf en geef ALLEEN feiten met bronnen:
+        model: 'gpt-4.1',
+        tools: [{ type: 'web_search' }],
+        temperature: 0.1,
+        max_output_tokens: 3000,
+        input: `Onderzoek dit Nederlandse bedrijf en geef ALLEEN feiten met bronnen:
 
-Bedrijf: ${companyName}
+Bedrijf / website: ${companyName}
 Locatie: ${city}
 
 Zoek naar:
 1. KvK-nummer (uit KvK register of bedrijfsprofiel)
-2. Aantal medewerkers/FTE (LinkedIn, werkenbij.nl, bedrijfsprofiel, nieuwsartikelen)
+2. Aantal medewerkers/FTE (alleen als je het toevallig vindt)
 3. Sector/SBI-code
 4. Certificaten: ISO 14001, EcoVadis score, B Corp, CO2-Prestatieladder niveau, SBTi commitment
 5. Belangrijkste klanten/afnemers
@@ -146,16 +146,8 @@ Zoek naar:
 7. Relevante ESG/duurzaamheid nieuws
 
 Geef elk feit met bron-URL. Als niet gevonden: vermeld dat expliciet.`,
-          }
-        ],
-        tools: [
-          {
-            type: 'web_search_preview'
-          }
-        ],
-        temperature: 0.1,
       }),
-      signal: AbortSignal.timeout(45000), // 45 sec timeout
+      signal: AbortSignal.timeout(60000),
     });
 
     if (!response.ok) {
@@ -163,7 +155,15 @@ Geef elk feit met bron-URL. Als niet gevonden: vermeld dat expliciet.`,
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || 'Geen resultaten';
+    if (typeof data.output_text === 'string' && data.output_text) return data.output_text;
+    let text = '';
+    for (const item of data.output || []) {
+      if (item?.type !== 'message') continue;
+      for (const c of item.content || []) {
+        if (c?.type === 'output_text') text += c.text || '';
+      }
+    }
+    return text || 'Geen resultaten';
     
   } catch (error) {
     console.error('Web search error:', error);
@@ -171,11 +171,30 @@ Geef elk feit met bron-URL. Als niet gevonden: vermeld dat expliciet.`,
   }
 }
 
+async function mergeDossier(db: any, clientId: number | string, patch: Record<string, any>) {
+  if (!isUsingSupabase()) return;
+  const { data, error } = await db.from('clients').select('dossier').eq('id', clientId).single();
+  if (error) {
+    console.error('Read dossier failed:', error);
+  }
+  const current = data?.dossier && typeof data.dossier === 'object' ? data.dossier : {};
+  const { error: updError } = await db
+    .from('clients')
+    .update({ dossier: { ...current, ...patch }, updated_at: new Date().toISOString() })
+    .eq('id', clientId);
+  if (updError) {
+    console.error('Update dossier failed:', updError);
+    throw new Error(`Database fout: ${updError.message}`);
+  }
+}
+
 export async function POST(request: NextRequest) {
+  let currentStep = 'onbekend';
   try {
     // Parse body ONCE at the top - cannot read request.json() multiple times
     const body = await request.json();
     const { url, city, step, clientId } = body;
+    currentStep = step || 'onbekend';
 
     if (!url) {
       return NextResponse.json({ error: 'URL is verplicht' }, { status: 400 });
@@ -383,6 +402,43 @@ Geef in JSON formaat:
       });
     }
 
+    // Step: deep research dossier (Responses API + web_search), merged into clients.dossier
+    if (step === 'dossier') {
+      if (!clientId) {
+        return NextResponse.json({ error: 'Client ID verplicht voor dossier stap', step }, { status: 400 });
+      }
+      if (!process.env.OPENAI_API_KEY) {
+        return NextResponse.json({ error: 'OpenAI API key ontbreekt', step }, { status: 500 });
+      }
+
+      const research = await performDossierResearch(websiteUrl.toString(), city, process.env.OPENAI_API_KEY, 210000);
+      let onderzoek = research.dossier;
+      if (onderzoek) {
+        try {
+          onderzoek = await validateDossierQuotes(onderzoek, 45000);
+        } catch (e) {
+          console.error('Quote validation failed (non-fatal):', e);
+        }
+      }
+
+      const patch: Record<string, any> = {
+        onderzoek: onderzoek || null,
+        onderzoek_webbronnen: research.citations,
+        onderzoek_model: research.model,
+        onderzoek_op: new Date().toISOString(),
+      };
+      if (!onderzoek) {
+        patch.onderzoek_ruwe_tekst = research.raw ? research.raw.slice(0, 60000) : null;
+        patch.onderzoek_fout = research.error || 'onbekend';
+      }
+      await mergeDossier(db, clientId, patch);
+
+      if (!onderzoek) {
+        return NextResponse.json({ error: `Diepteonderzoek mislukt: ${research.error || 'onbekend'}`, step }, { status: 502 });
+      }
+      return NextResponse.json({ success: true, webbronnen: research.citations.length });
+    }
+
     // Step 6: Claim check (ECGT + ACM)
     if (step === 'claims') {
       if (!clientId) {
@@ -396,11 +452,12 @@ Geef in JSON formaat:
       const claimResults = extractAndCheckClaims(crawlData.totalContent, websiteUrl.toString());
 
       // Store in database
-      if (clientId) {
-        const db = getDb();
+      if (isUsingSupabase()) {
+        await mergeDossier(db, clientId, { claimcheck: claimResults });
+      } else {
         for (const result of claimResults) {
           db.prepare(`
-            INSERT INTO claimcheck (client_id, claim_text, result, risks, suggestions)
+            INSERT INTO claim_checks (client_id, claim_text, result, risks, suggestions)
             VALUES (?, ?, ?, ?, ?)
           `).run(
             clientId,
@@ -526,39 +583,22 @@ Vul alle velden in met bronnen waar mogelijk.`,
         }));
         await db.from('client_status').insert(statusData);
         
-        // Store structured dossier if available (non-fatal)
+        // Store the basic profile in the dossier column (non-fatal). Deep research runs in step 'dossier'.
         try {
-          if (process.env.OPENAI_API_KEY) {
-            console.log('Performing structured research for dossier...');
-            const dossierText = await performWebSearchResearch(
-              websiteUrl.toString(),
-              city,
-              process.env.OPENAI_API_KEY
-            );
-            
-            // Try to parse as JSON
-            try {
-              const dossier = JSON.parse(dossierText);
-              console.log('Validating quotes in dossier...');
-              const validatedDossier = await validateDossierQuotes(dossier);
-              
-              // Store in dossier column
-              const { error: dossierError } = await db
-                .from('clients')
-                .update({ dossier: validatedDossier })
-                .eq('id', clientId);
-              
-              if (dossierError) {
-                console.error('Failed to store dossier:', dossierError);
-              } else {
-                console.log('Structured dossier stored successfully');
-              }
-            } catch (parseError) {
-              console.error('Dossier is not valid JSON, storing as text:', parseError);
-            }
-          }
+          const { error: dossierError } = await db
+            .from('clients')
+            .update({
+              dossier: {
+                basis: companyData,
+                website: { url: websiteUrl.toString(), paginas: crawlData.pages.map((p: any) => p.url) },
+                web_research_tekst: webResearch,
+                aangemaakt_op: new Date().toISOString(),
+              },
+            })
+            .eq('id', clientId);
+          if (dossierError) console.error('Failed to store basic dossier:', dossierError);
         } catch (dossierError) {
-          console.error('Structured research failed (non-fatal):', dossierError);
+          console.error('Storing basic dossier failed (non-fatal):', dossierError);
         }
         
       } else {
@@ -608,7 +648,7 @@ Vul alle velden in met bronnen waar mogelijk.`,
     return NextResponse.json(
       { 
         error: errorMessage,
-        step: 'onbekend',
+        step: currentStep,
         details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
       },
       { status: 500 }

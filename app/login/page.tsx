@@ -25,7 +25,7 @@ export default function LoginPage() {
       });
 
       if (response.ok) {
-        router.push('/dashboard');
+        router.push('/');
       } else {
         setError('Onjuist wachtwoord');
       }

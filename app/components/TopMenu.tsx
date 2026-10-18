@@ -3,14 +3,11 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Menu, X, LayoutDashboard, Users, Search, BookOpen, CheckCircle, LogOut } from 'lucide-react';
+import { Menu, X, PlusCircle, List, LogOut } from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Klanten', href: '/klanten', icon: Users },
-  { name: 'Scan & gatanalyse', href: '/scan', icon: Search },
-  { name: 'Wetgeving & drempels', href: '/wetgeving', icon: BookOpen },
-  { name: 'Claimcheck', href: '/claimcheck', icon: CheckCircle },
+  { name: 'Nieuwe prospect', href: '/', icon: PlusCircle },
+  { name: 'Eerdere prospects', href: '/prospects', icon: List },
 ];
 
 export default function TopMenu() {
@@ -29,19 +26,19 @@ export default function TopMenu() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center space-x-3">
+            <Link href="/" className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-emerald-500 shadow-lg"></div>
               <div>
                 <h1 className="text-lg font-bold text-white">MVO-bewijs werkbank</h1>
                 <p className="text-xs text-teal-200 -mt-0.5">ESG-bewijs voor MKB</p>
               </div>
-            </div>
+            </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                const isActive = item.href === '/' ? pathname === '/' : (pathname === item.href || pathname?.startsWith(item.href + '/'));
                 return (
                   <Link
                     key={item.name}
@@ -88,7 +85,7 @@ export default function TopMenu() {
             <div className="px-4 py-3 space-y-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+                const isActive = item.href === '/' ? pathname === '/' : (pathname === item.href || pathname?.startsWith(item.href + '/'));
                 return (
                   <Link
                     key={item.name}
