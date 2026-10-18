@@ -11,7 +11,21 @@ HARDE REGELS
 BRONNEN (in deze volgorde doorzoeken)
 A. De website zelf: homepage, over ons, duurzaamheid/MVO/ESG, certificaten/kwaliteit, producten/diensten, referenties/klanten, vacatures, nieuws/blog, contact, footer, algemene voorwaarden en privacyverklaring (KvK-nummer en juridische naam staan daar vaak), duurzaamheidsverslag, CO2-voortgangsrapportage of gedragscode als PDF.
 B. KvK en openbare registers: naam, KvK-nummer, vestigingsplaats, SBI (kvk.nl-zoekresultaten, openkvk, vergelijkbare openbare uittreksels).
-C. Certificaatregisters: SKAO/CO2-Prestatieladder (co2-prestatieladder.nl, gecertificeerde bedrijven), EcoVadis (alleen als het bedrijf de score zelf publiceert), B Corp (bcorporation.net/find-a-b-corp), SBTi (sciencebasedtargets.org target dashboard), ISO 14001/9001/45001 (certificaten of vermeldingen van een certificerende instelling), keurmerken zoals FSC, PEFC, MVO Nederland, Fairtrade, Groen Label.
+C. Certificaatregisters:
+   - SKAO/CO2-Prestatieladder: co2-prestatieladder.nl, gecertificeerde bedrijven met niveau en geldigheid
+   - EcoVadis: geen openbaar register, scores zijn privé. Alleen zoeken naar medaille/score/badge die het bedrijf zelf publiceert (eigen site, LinkedIn, nieuws, persbericht). Altijd vermelden: 'zelf gepubliceerd, niet geverifieerd'.
+   - B Corp: bcorporation.net/find-a-b-corp, gecertificeerde B Corps met score
+   - SBTi: sciencebasedtargets.org target dashboard, goedgekeurde doelen
+   - IAF CertSearch: iafcertsearch.org voor ISO 14001, 9001 en 45001 verificatie
+   - UN Global Compact: unglobalcompact.org/what-is-gc/participants voor deelname en status (active / non-communicating)
+   - CDP: cdp.net (zoek op bedrijf) voor openbare klimaat-, water- en bosscores
+   - MVO Nederland: ledenoverzicht of vermelding als lid
+   - FSC: info.fsc.org certificate search voor FSC-certificaten
+   - PEFC: pefc.org find certified voor PEFC-certificaten
+   - EU Ecolabel: ECAT-catalogus voor gecertificeerde producten en bedrijven
+   - Milieukeur/SMK: smk.nl voor gecertificeerde producten en bedrijven
+   - Overige keurmerken: Fairtrade, Groen Label, Cradle to Cradle, etc.
+   Per treffer in de output: platform, niveau of score, geldigheid, verificatie (register / zelf gepubliceerd), bron-URL en citaat. Niet gevonden: 'niet gevonden in register' (nooit 'heeft het niet').
 D. Nieuws: lokale en vakmedia, persberichten, tenders en gunningen.
 E. LinkedIn-bedrijfspagina en openbare posts van het bedrijf zelf (voor zover openbaar vindbaar).
 
@@ -19,7 +33,7 @@ WAT JE INVULT
 1. PROFIEL: juridische naam, handelsnaam, KvK-nummer, hoofdvestiging, SBI (gevonden of afgeleid), sector, producten/diensten, belangrijkste afnemers/markten (B2B/B2C/overheid), omzet, aantal medewerkers.
 2. KETENRISICO-SIGNALEN: EUDR (verhandelt het bedrijf soja, palmolie, rundvee, cacao, koffie, rubber of hout?), CBAM (importeert het staal, aluminium, cement, kunstmest, waterstof of elektriciteit?), levert het aan grote ondernemingen (>1000 fte) of de overheid (indirecte druk via VSME-vragenlijsten)?, bouw/infra/GWW (CO2-Prestatieladder relevant)?
 3. VSME BASIC B1–B11, per onderdeel status (aanwezig / gedeeltelijk / ontbrekend), samenvatting, bron-URL en citaat: B1 grondslag en opzet rapport; B2 beleid en praktijken duurzaamheid; B3 energie en broeikasgassen scope 1 en 2; B4 verontreiniging; B5 biodiversiteit; B6 water; B7 grondstoffen, circulariteit, afval; B8 personeel; B9 gezondheid en veiligheid; B10 beloning, cao, opleiding; B11 corruptie/omkoping.
-4. EXTRA: gedragscode voor leveranciers; duurzaamheidsverslag of -pagina; CO2-doelen (doel, jaartal, scope, is er een plan met tussendoelen?); certificaten en keurmerken (naam, niveau, geldigheid, in register geverifieerd ja/nee).
+4. EXTRA: gedragscode voor leveranciers; duurzaamheidsverslag of -pagina; CO2-doelen (doel, jaartal, scope, is er een plan met tussendoelen?); certificaten en keurmerken (platform, naam, niveau of score, geldigheid, verificatie: register of zelf gepubliceerd, status: gevonden of niet gevonden in register, bron-URL en citaat).
 5. CLAIMS: alle milieu- en duurzaamheidsclaims die je letterlijk op de site of in eigen uitingen vindt. Per claim: letterlijk citaat, URL, type (generiek, klimaatneutraal/compensatie, label, toekomstclaim, vergelijkend, specifiek) en een eerste inschatting rood/oranje/groen volgens de EU-richtlijn Empowering Consumers (ECGT, van toepassing sinds 27-09-2026) en de ACM Leidraad Duurzaamheidsclaims. Rood: generiek zonder erkend bewijs, CO2-neutraal/compensatie, label zonder certificering, deel-claim als geheel, wettelijke plicht als onderscheidend. Oranje: toekomstclaim zonder plan met tussendoelen en onafhankelijke toetsing, vergelijking zonder methode, percentage zonder basis. Groen: specifiek, meetbaar, onderbouwd, actueel. Geef per claim een herschrijfvoorstel.
 6. GATEN: lijst van ontbrekende onderdelen met prioriteit (hoog bij B3, B8, B9 en certificaten waar de markt van het bedrijf om vraagt), waarom het ertoe doet (inkopers, banken, tenders) en een concrete bewijsactie.
 

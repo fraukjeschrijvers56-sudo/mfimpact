@@ -20,7 +20,7 @@ Een VELD heeft altijd de vorm: {"waarde": <tekst, getal of lijst>, "status": "ge
   "extra": {
     "gedragscode_leveranciers": VELD, "duurzaamheidsverslag": VELD, "co2_doelen": VELD, "co2_footprint": VELD, "energie_maatregelen": VELD, "sociaal_beleid": VELD
   },
-  "certificaten": [{"naam": <tekst>, "niveau": <tekst of null>, "geldig_tot": <tekst of null>, "geverifieerd_in_register": "ja" | "nee" | "onbekend", "bronnen": [...]}],
+  "certificaten": [{"platform": <tekst>, "naam": <tekst>, "niveau_of_score": <tekst of null>, "geldig_tot": <tekst of null>, "verificatie": "register" | "zelf_gepubliceerd", "status": "gevonden" | "niet_gevonden_in_register", "bronnen": [{"url": <url>, "citaat": <citaat>, "datum": <datum of null>}]}],
   "nieuws": [{"titel": <tekst>, "datum": <tekst of null>, "samenvatting": <tekst>, "url": <url>}],
   "tenders_projecten": [{"titel": <tekst>, "opdrachtgever": <tekst of null>, "datum": <tekst of null>, "url": <url>}],
   "personen": [{"naam": <tekst>, "functie": <tekst>, "url": <url of null>}],

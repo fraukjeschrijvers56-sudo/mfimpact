@@ -250,16 +250,50 @@ export function ProspectView({ client }: { client: any }) {
         <Section id="certificaten" title="Certificaten & keurmerken" icon={<Award className="w-5 h-5" />} count={certificaten.length}>
           {certificaten.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {certificaten.map((c: any, i: number) => (
-                <div key={i} className="rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-white">{nl(c.naam ?? c.waarde)}</p>
-                    {c.geverifieerd_in_register !== undefined && <span className="text-xs text-emerald-200">register: <Badge value={c.geverifieerd_in_register} /></span>}
+              {certificaten.map((c: any, i: number) => {
+                // Support both old and new field names
+                const naam = c.naam ?? c.waarde;
+                const niveau = c.niveau_of_score ?? c.niveau;
+                const geldigTot = c.geldig_tot;
+                const platform = c.platform;
+                const verificatie = c.verificatie; // 'register' | 'zelf_gepubliceerd'
+                const status = c.status; // 'gevonden' | 'niet_gevonden_in_register'
+                const oudGeverifieerd = c.geverifieerd_in_register; // backwards compatibility
+                
+                // Determine verification badge
+                let verificationBadge = null;
+                if (verificatie === 'register' || oudGeverifieerd === 'ja') {
+                  verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-900/60 text-green-200 border border-green-600/50">in register geverifieerd</span>;
+                } else if (verificatie === 'zelf_gepubliceerd') {
+                  verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-900/60 text-amber-200 border border-amber-600/50">zelf gepubliceerd, niet geverifieerd</span>;
+                } else if (status === 'niet_gevonden_in_register') {
+                  verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-slate-400">niet gevonden in register</span>;
+                } else if (oudGeverifieerd === 'nee') {
+                  verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-slate-400">niet geverifieerd</span>;
+                }
+                
+                return (
+                  <div key={i} className="rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-3">
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <p className="font-semibold text-white">{nl(naam)}</p>
+                          {platform && <p className="text-xs text-emerald-200/70">{platform}</p>}
+                        </div>
+                        {verificationBadge}
+                      </div>
+                      {(niveau || geldigTot) && (
+                        <p className="text-sm text-emerald-50/90">
+                          {niveau && <>Niveau: {nl(niveau)}</>}
+                          {niveau && geldigTot && <> · </>}
+                          {geldigTot && <>Geldig tot: {nl(geldigTot)}</>}
+                        </p>
+                      )}
+                      <Bronnen bronnen={c.bronnen} />
+                    </div>
                   </div>
-                  <p className="text-sm text-emerald-50/90">Niveau: {nl(c.niveau)} · Geldig tot: {nl(c.geldig_tot)}</p>
-                  <Bronnen bronnen={c.bronnen} />
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : basis?.certificaten?.length ? <Waarde v={basis.certificaten} /> : <p className="text-slate-300 italic">Geen certificaten gevonden.</p>}
         </Section>

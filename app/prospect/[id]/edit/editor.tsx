@@ -281,7 +281,7 @@ export function ProspectEditor({ client }: { client: any }) {
           title="Certificaten"
           items={certificaten}
           setItems={setCertificaten}
-          fields={['naam', 'niveau', 'geldig_tot', 'geverifieerd_in_register']}
+          fields={['platform', 'naam', 'niveau_of_score', 'niveau', 'geldig_tot', 'verificatie', 'status', 'geverifieerd_in_register']}
         />
 
         <EditableArraySection
