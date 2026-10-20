@@ -15,7 +15,8 @@ VELDEN
 - producten_diensten, afnemers_markten
 - belangrijkste_klanten_referenties, oprichtingsjaar
 - directie_eigenaren, moeder_of_groepsmaatschappij
-- contactgegevens, linkedin, omzet, aantal_medewerkers
+- contactgegevens, omzet, aantal_medewerkers
+- linkedin: zoek eerst naar de bedrijfspagina linkedin.com/company/[bedrijfsnaam]. Indien niet gevonden, zoek naar het persoonlijke LinkedIn-profiel van de eigenaar of directeur (naam uit de onderzoeksdata) via websearch '[naam] + [bedrijfsnaam] + LinkedIn'. Geef terug: {url: <genormaliseerde linkedin.com URL>, type: 'bedrijfspagina' of 'eigenaar', naam: <naam bij eigenaar, anders null>, bron: <URL waar de link gevonden is>, status: 'gevonden' of 'niet gevonden'}. Scrape nooit LinkedIn-pagina's zelf.
 
 OUTPUT
 Alleen geldige JSON volgens het schema, zonder tekst eromheen. Elk veld heeft: waarde, status (gevonden / afgeleid / onbekend / twijfelachtig), toelichting, bronnen [{url, citaat, datum}].

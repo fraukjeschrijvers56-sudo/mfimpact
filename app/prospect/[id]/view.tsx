@@ -11,6 +11,7 @@ import {
 import { Section, Badge, Bronnen, Waarde, FieldGrid, FieldRow, Generic, SourceLink, Stat } from './parts';
 import { ProspectActions } from './actions';
 import { MvoRegisterCard } from './mvo-register-card';
+import { LinkedInCard } from './linkedin-card';
 import { KlanteisenSection } from './klanteisen-section';
 import { VersionHistory } from './version-history';
 import { SectionWrapper } from './section-wrapper';
@@ -175,6 +176,9 @@ export function ProspectView({ client }: { client: any }) {
 
         {/* MVO-REGISTER */}
         <MvoRegisterCard clientId={client.id} data={mvoRegister} />
+
+        {/* LINKEDIN */}
+        <LinkedInCard clientId={client.id} data={profiel.linkedin} sectionMetadata={sectionMetadata} />
 
         {/* KLANTEISEN - merged with aanknopingspunten */}
         <KlanteisenSection clientId={client.id} dossier={dossier} />

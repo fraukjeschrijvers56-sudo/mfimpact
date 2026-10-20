@@ -10,6 +10,12 @@ import {
   normalizeDossier,
 } from '@/lib/field-normalizer';
 import {
+  parseLinkedInData,
+  normalizeLinkedInUrl,
+  detectLinkedInType,
+  type LinkedInType,
+} from '@/lib/linkedin';
+import {
   Save,
   X,
   ArrowLeft,
@@ -40,6 +46,7 @@ export function ProspectEditor({ client }: { client: any }) {
   }
   dossier = dossier && typeof dossier === 'object' ? dossier : {};
   const onderzoek: any = dossier.onderzoek ?? (dossier.profiel || dossier.vsme_basic ? dossier : {});
+  const profiel: any = onderzoek.profiel || {};
 
   // Basic fields - extract display values from field objects
   const [naam, setNaam] = useState(String(extractDisplayValue(client.naam) || ''));
@@ -68,6 +75,12 @@ export function ProspectEditor({ client }: { client: any }) {
   const [kansen, setKansen] = useState<string[]>(
     Array.isArray(onderzoek.kansen_gesprek) ? onderzoek.kansen_gesprek : []
   );
+
+  // LinkedIn state
+  const linkedinData = parseLinkedInData(profiel.linkedin);
+  const [linkedinUrl, setLinkedinUrl] = useState(linkedinData?.url || '');
+  const [linkedinType, setLinkedinType] = useState<LinkedInType>(linkedinData?.type || 'bedrijfspagina');
+  const [linkedinNaam, setLinkedinNaam] = useState(linkedinData?.naam || '');
 
   const [editingSection, setEditingSection] = useState<string | null>(null);
 
@@ -129,6 +142,14 @@ export function ProspectEditor({ client }: { client: any }) {
       if (JSON.stringify(kansen) !== JSON.stringify(originalKansen)) {
         editedFields.push('onderzoek.kansen_gesprek');
       }
+      
+      // Check if LinkedIn changed
+      const originalLinkedinData = parseLinkedInData(profiel.linkedin);
+      const currentLinkedinUrl = normalizeLinkedInUrl(linkedinUrl);
+      const originalLinkedinUrl = originalLinkedinData?.url || '';
+      if (currentLinkedinUrl !== originalLinkedinUrl || linkedinNaam !== (originalLinkedinData?.naam || '')) {
+        editedFields.push('onderzoek.profiel.linkedin');
+      }
 
       // Merge with existing edited_fields
       let existingEditedFields: string[] = client.edited_fields || [];
@@ -141,11 +162,24 @@ export function ProspectEditor({ client }: { client: any }) {
       }
       const allEditedFields = Array.from(new Set([...existingEditedFields, ...editedFields]));
 
+      // Build LinkedIn data object
+      const normalizedLinkedinUrl = normalizeLinkedInUrl(linkedinUrl);
+      const linkedinDataToSave = normalizedLinkedinUrl ? {
+        url: normalizedLinkedinUrl,
+        type: detectLinkedInType(normalizedLinkedinUrl) || linkedinType,
+        naam: linkedinType === 'eigenaar' ? linkedinNaam : undefined,
+        status: 'handmatig ingevoerd' as const,
+      } : profiel.linkedin;
+
       const updatedDossier = normalizeDossier({
         ...dossier,
         onderzoek: {
           ...onderzoek,
           samenvatting: samenvatting || onderzoek.samenvatting,
+          profiel: {
+            ...profiel,
+            linkedin: linkedinDataToSave,
+          },
           personen,
           certificaten,
           nieuws,
@@ -300,6 +334,43 @@ export function ProspectEditor({ client }: { client: any }) {
                 rows={3}
                 className="w-full px-3 py-2 rounded-lg bg-emerald-900/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none resize-none"
               />
+            </div>
+          </div>
+
+          {/* LinkedIn section */}
+          <div className="mt-4 pt-4 border-t border-emerald-700/50">
+            <h3 className="text-sm font-semibold text-emerald-300 mb-3 uppercase tracking-wide">LinkedIn (bedrijf of eigenaar)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-white mb-1">LinkedIn-URL</label>
+                <input
+                  type="text"
+                  value={linkedinUrl}
+                  onChange={(e) => {
+                    setLinkedinUrl(e.target.value);
+                    // Auto-detect type
+                    const detected = detectLinkedInType(e.target.value);
+                    if (detected) setLinkedinType(detected);
+                  }}
+                  placeholder="https://www.linkedin.com/company/... of /in/..."
+                  className="w-full px-3 py-2 rounded-lg bg-emerald-900/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none"
+                />
+                <p className="text-xs text-emerald-200/70 mt-1">
+                  Alleen /company/ (bedrijfspagina) of /in/ (eigenaar) URLs
+                </p>
+              </div>
+              {linkedinType === 'eigenaar' && (
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-1">Naam eigenaar</label>
+                  <input
+                    type="text"
+                    value={linkedinNaam}
+                    onChange={(e) => setLinkedinNaam(e.target.value)}
+                    placeholder="Naam van de eigenaar"
+                    className="w-full px-3 py-2 rounded-lg bg-emerald-900/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>

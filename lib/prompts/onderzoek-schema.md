@@ -8,7 +8,8 @@ Een VELD heeft altijd de vorm: {"waarde": <tekst, getal of lijst>, "status": "ge
     "overige_vestigingen": VELD, "sbi": VELD, "sector": VELD, "producten_diensten": VELD,
     "afnemers_markten": VELD, "belangrijkste_klanten_referenties": VELD, "oprichtingsjaar": VELD,
     "directie_eigenaren": VELD, "moeder_of_groepsmaatschappij": VELD, "contactgegevens": VELD,
-    "linkedin": VELD, "omzet": VELD, "aantal_medewerkers": VELD
+    "linkedin": {"url": <linkedin.com/company/ of /in/ URL, genormaliseerd>, "type": "bedrijfspagina" | "eigenaar", "naam": <naam bij eigenaar, anders null>, "bron": <URL waar de LinkedIn-link gevonden is>, "status": "gevonden" | "niet gevonden"},
+    "omzet": VELD, "aantal_medewerkers": VELD
   },
   "ketenrisico": {
     "eudr": VELD, "cbam": VELD, "levert_aan_grote_ondernemingen_of_overheid": VELD, "bouw_infra_gww": VELD

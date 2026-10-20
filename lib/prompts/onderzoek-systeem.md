@@ -28,7 +28,7 @@ C. Certificaatregisters:
    - Overige keurmerken: Fairtrade, Groen Label, Cradle to Cradle, etc.
    Per treffer in de output: platform, niveau of score, geldigheid, verificatie (register / zelf gepubliceerd), bron-URL en citaat. Niet gevonden: 'niet gevonden in register' (nooit 'heeft het niet').
 D. Nieuws: lokale en vakmedia, persberichten, tenders en gunningen.
-E. LinkedIn-bedrijfspagina en openbare posts van het bedrijf zelf (voor zover openbaar vindbaar).
+E. LinkedIn: zoek eerst naar de bedrijfspagina linkedin.com/company/[bedrijfsnaam]. Indien niet gevonden, zoek naar het persoonlijke LinkedIn-profiel van de eigenaar of directeur (naam uit de website, KvK-gegevens of over-ons-pagina) via websearch '[naam] + [bedrijfsnaam] + LinkedIn'. Leg vast: url, type ('bedrijfspagina' of 'eigenaar'), naam (bij eigenaar), bron (URL waar je de LinkedIn-link vond), status ('gevonden' of 'niet gevonden'). Scrape nooit LinkedIn-pagina's zelf; gebruik alleen de URL als referentie.
 
 WAT JE INVULT
 1. PROFIEL: juridische naam, handelsnaam, KvK-nummer, hoofdvestiging, SBI (gevonden of afgeleid), sector, producten/diensten, belangrijkste afnemers/markten (B2B/B2C/overheid), omzet, aantal medewerkers.
