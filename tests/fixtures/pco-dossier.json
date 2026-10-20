@@ -1,0 +1,483 @@
+{
+ "naam": "PCO Management B.V.",
+ "website_url": "https://pcomanagement.nl/",
+ "plaats": "Schijndel",
+ "dossier": {
+  "basis": {
+   "kvk": "86746626",
+   "naam": "PCO Management B.V.",
+   "omzet": "onbekend",
+   "sector": "Activiteiten van ingenieurs en overig technisch ontwerp en advies",
+   "producten": null,
+   "confidence": "middel",
+   "kvk_source": "https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html?utm_source=openai",
+   "balanstotaal": "onbekend",
+   "beschrijving": "PCO Management levert consultancy op het gebied van project-, contract en omgevingsmanagement, gericht op het verbeteren van bouwprocessen en samenwerking met stakeholders.",
+   "certificaten": null,
+   "omzet_source": "onbekend",
+   "sector_source": "https://lb.kompass.com/c/pco-management-b-v/nlc9929413/?utm_source=openai",
+   "afnemers_source": "onbekend",
+   "producten_source": "onbekend",
+   "aantal_medewerkers": 1,
+   "certificaten_source": "onbekend",
+   "belangrijkste_afnemers": null,
+   "aantal_medewerkers_quote": "1 werknemer gevonden",
+   "aantal_medewerkers_source": "https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html?utm_source=openai"
+  },
+  "website": {
+   "url": "https://pcomanagement.nl/",
+   "paginas": [
+    "https://pcomanagement.nl/",
+    "https://pcomanagement.nl/sitemap.xml"
+   ]
+  },
+  "onderzoek": {
+   "extra": {
+    "co2_doelen": {
+     "status": "onbekend",
+     "waarde": "onbekend",
+     "bronnen": [],
+     "toelichting": "Geen CO₂-doelen vermeld"
+    },
+    "co2_footprint": {
+     "status": "onbekend",
+     "waarde": "onbekend",
+     "bronnen": [],
+     "toelichting": "Geen CO₂-footprint beschikbaar"
+    },
+    "sociaal_beleid": {
+     "status": "onbekend",
+     "waarde": "onbekend",
+     "bronnen": [],
+     "toelichting": "Geen sociaal beleid zichtbaar"
+    },
+    "energie_maatregelen": {
+     "status": "onbekend",
+     "waarde": "onbekend",
+     "bronnen": [],
+     "toelichting": "Geen energiegerelateerde maatregelen vermeld"
+    },
+    "duurzaamheidsverslag": {
+     "status": "onbekend",
+     "waarde": "onbekend",
+     "bronnen": [],
+     "toelichting": "Geen duurzaamheidsverslag of -pagina gevonden"
+    },
+    "gedragscode_leveranciers": {
+     "status": "onbekend",
+     "waarde": "onbekend",
+     "bronnen": [],
+     "toelichting": "Geen gedragscode leveranciers gevonden"
+    }
+   },
+   "gaten": [
+    {
+     "waarom": "Belangrijk voor tenders en overheidsopdrachten in bouw/infrastructuur",
+     "onderdeel": "B3 Energie en broeikasgassen",
+     "prioriteit": "hoog",
+     "bewijsactie": "Vraag naar CO₂-emissiegegevens of energiebeleid"
+    },
+    {
+     "waarom": "HR-beleid relevant voor MVO-beoordeling",
+     "onderdeel": "B8 Personeel",
+     "prioriteit": "hoog",
+     "bewijsactie": "Vraag naar personeelsbeleid, opleiding en veiligheid"
+    },
+    {
+     "waarom": "Certificaten zijn vaak vereist bij aanbestedingen",
+     "onderdeel": "certificaten (bijv. CO2-Prestatieladder)",
+     "prioriteit": "hoog",
+     "bewijsactie": "Controleer of certificaten bestaan en vraag bewijs"
+    }
+   ],
+   "claims": [],
+   "nieuws": [],
+   "profiel": {
+    "sbi": {
+     "status": "gevonden / afgeleid",
+     "waarde": "78202 (Uitleenbureaus) of afgeleid 71120 (ingenieursadvies)",
+     "bronnen": [
+      {
+       "url": "https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html",
+       "datum": null,
+       "citaat": "SBI code 78202 Omschrijving Uitleenbureaus",
+       "validatie": "niet_controleerbaar"
+      },
+      {
+       "url": "https://lb.kompass.com/c/pco-management-b-v/nlc9929413/",
+       "datum": null,
+       "citaat": "SBI (NL 2025) : Activiteiten van ingenieurs en overig technisch ontwerp en advies (71120)",
+       "validatie": "niet_controleerbaar"
+      }
+     ],
+     "toelichting": "SBI 78202 uit KvK, maar Kompass classificeert als ingenieursadvies (71120)"
+    },
+    "omzet": {
+     "status": "onbekend",
+     "waarde": "onbekend",
+     "bronnen": [],
+     "toelichting": "Geen omzetgegevens gevonden"
+    },
+    "sector": {
+     "status": "afgeleid",
+     "waarde": "Adviesbureau bouw/infrastructuur",
+     "bronnen": [
+      {
+       "url": "https://pcomanagement.nl/",
+       "datum": null,
+       "citaat": "projectmanagement ... technisch management ... directievoering",
+       "validatie": "gevonden"
+      }
+     ],
+     "toelichting": "Afgeleid uit diensten zoals projectmanagement, technisch management in bouwprojecten"
+    },
+    "linkedin": {
+     "status": "onbekend",
+     "waarde": "onbekend",
+     "bronnen": [],
+     "toelichting": "LinkedIn-pagina niet gevonden via zoekopdracht"
+    },
+    "kvk_nummer": {
+     "status": "gevonden",
+     "waarde": "86746626",
+     "bronnen": [
+      {
+       "url": "https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html",
+       "datum": null,
+       "citaat": "KVK nummer 86746626",
+       "validatie": "niet_controleerbaar"
+      }
+     ],
+     "toelichting": null
+    },
+    "handelsnaam": {
+     "status": "gevonden",
+     "waarde": "PCO Management",
+     "bronnen": [
+      {
+       "url": "https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html",
+       "datum": null,
+       "citaat": "Handelsnamen PCO Management, PCO Management B.V.",
+       "validatie": "niet_controleerbaar"
+      }
+     ],
+     "toelichting": null
+    },
+    "hoofdvestiging": {
+     "status": "gevonden",
+     "waarde": "Wijbosscheweg, Schijndel",
+     "bronnen": [
+      {
+       "url": "https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html",
+       "datum": null,
+       "citaat": "gevestigd op Wijbosscheweg te Schijndel",
+       "validatie": "niet_controleerbaar"
+      }
+     ],
+     "toelichting": null
+    },
+    "contactgegevens": {
+     "status": "gevonden",
+     "waarde": {
+      "email": "geert@pcomanagement.nl",
+      "telefoon": "+31 6 238 863 89"
+     },
+     "bronnen": [
+      {
+       "url": "https://pcomanagement.nl/",
+       "datum": null,
+       "citaat": "bel Geert: +31 6 238 863 89 ... geert@pcomanagement.nl",
+       "validatie": "twijfelachtig"
+      }
+     ],
+     "toelichting": null
+    },
+    "juridische_naam": {
+     "status": "gevonden",
+     "waarde": "PCO Management B.V.",
+     "bronnen": [
+      {
+       "url": "https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html",
+       "datum": null,
+       "citaat": "PCO Management B.V. is actief in de branche ... gevestigd op Wijbosscheweg te Schijndel.",
+       "validatie": "niet_controleerbaar"
+      }
+     ],
+     "toelichting": null
+    },
+    "oprichtingsjaar": {
+     "status": "gevonden",
+     "waarde": "2018",
+     "bronnen": [
+      {
+       "url": "https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html",
+       "datum": null,
+       "citaat": "Inschrijfdatum 05 februari 2018",
+       "validatie": "niet_controleerbaar"
+      }
+     ],
+     "toelichting": null
+    },
+    "afnemers_markten": {
+     "status": "onbekend",
+     "waarde": "onbekend",
+     "bronnen": [],
+     "toelichting": "Geen expliciete informatie over afnemers of markten"
+    },
+    "aantal_medewerkers": {
+     "status": "gevonden",
+     "waarde": "1",
+     "bronnen": [
+      {
+       "url": "https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html",
+       "datum": null,
+       "citaat": "Aantal werknemers 1 Werknemer",
+       "validatie": "niet_controleerbaar"
+      }
+     ],
+     "toelichting": "Drimble vermeldt 1 werknemer"
+    },
+    "directie_eigenaren": {
+     "status": "onbekend",
+     "waarde": "onbekend",
+     "bronnen": [],
+     "toelichting": "Geen bestuurdersnamen op website of Drimble"
+    },
+    "producten_diensten": {
+     "status": "gevonden",
+     "waarde": [
+      "projectmanagement",
+      "contractmanagement",
+      "omgevingsmanagement",
+      "technisch management",
+      "tendermanagement",
+      "directievoering"
+     ],
+     "bronnen": [
+      {
+       "url": "https://pcomanagement.nl/",
+       "datum": null,
+       "citaat": "managen van projecten ... projectmanagement ... contractmanagement ... omgevingsmanagement ... technisch management ... tendermanagement ... directievoering",
+       "validatie": "gevonden"
+      }
+     ],
+     "toelichting": null
+    },
+    "overige_vestigingen": {
+     "status": "onbekend",
+     "waarde": "onbekend",
+     "bronnen": [],
+     "toelichting": null
+    },
+    "moeder_of_groepsmaatschappij": {
+     "status": "gevonden",
+     "waarde": "SJRS Holding B.V.",
+     "bronnen": [
+      {
+       "url": "https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html",
+       "datum": null,
+       "citaat": "Moederbedrijf SJRS Holding B.V.",
+       "validatie": "niet_controleerbaar"
+      }
+     ],
+     "toelichting": null
+    },
+    "belangrijkste_klanten_referenties": {
+     "status": "gevonden",
+     "waarde": [
+      "Herstel natte natuurparel landgoed Heeswijk",
+      "Centrumgebied Kerkdriel",
+      "Snelfietsroute Zaltbommel – ’s‑Hertogenbosch",
+      "Kasteelplein Hedel",
+      "EVZ Beneden Aa",
+      "Beekherstel Sint‑Jansbeek",
+      "Aa‑dal zuid",
+      "EVZ Traces Deurne e.o.",
+      "Beekherstel Esperloop",
+      "Droge voeten Sint‑Oedenrode",
+      "Herstel duikers en sifons Peelkanalen",
+      "Slim sturen stuwen",
+      "Gebiedsinrichting Leegveld",
+      "Winkelcentrum Walburg",
+      "Onderhoud nat areaal Zuid Nederland",
+      "Raamovereenkomst herstel bruggen",
+      "Herinrichting Beekdal Groote Beerze",
+      "Inrichting Kersenbuurt",
+      "Beekherstel Snelleloop",
+      "Reconstructie Teisterbandstraat",
+      "Herstel natte natuurparel Landgoed Heeswijk"
+     ],
+     "bronnen": [
+      {
+       "url": "https://pcomanagement.nl/",
+       "datum": null,
+       "citaat": "projecten: Herstel natte natuurparel landgoed Heeswijk, Centrumgebied Kerkdriel, Snelfietsroute Zaltbommel – ’s‑Hertogenbosch, Kasteelplein Hedel, EVZ Beneden Aa ...",
+       "validatie": "gevonden"
+      }
+     ],
+     "toelichting": "Projecten genoemd op homepage"
+    }
+   },
+   "personen": [
+    {
+     "url": null,
+     "naam": "Geert Schrijvers",
+     "functie": "directievoerder / projectmanager"
+    }
+   ],
+   "klanteisen": {
+    "eisen": [],
+    "klanttypen": [],
+    "tendertreffers": [],
+    "concrete_tenders": [],
+    "aanknopingspunten": []
+   },
+   "vsme_basic": {
+    "B1": {
+     "titel": "Grondslag en opzet rapport",
+     "status": "ontbrekend",
+     "bronnen": [],
+     "samenvatting": "Geen rapport of MVO-grondslag zichtbaar"
+    },
+    "B2": {
+     "titel": "Beleid en praktijken duurzaamheid",
+     "status": "ontbrekend",
+     "bronnen": [],
+     "samenvatting": "Geen duurzaamheidsbeleid of praktijken vermeld"
+    },
+    "B3": {
+     "titel": "Energie en broeikasgassen scope 1 en 2",
+     "status": "ontbrekend",
+     "bronnen": [],
+     "samenvatting": "Geen informatie over energie of CO₂-emissies"
+    },
+    "B4": {
+     "titel": "Verontreiniging",
+     "status": "ontbrekend",
+     "bronnen": [],
+     "samenvatting": "Geen informatie over verontreiniging"
+    },
+    "B5": {
+     "titel": "Biodiversiteit",
+     "status": "ontbrekend",
+     "bronnen": [],
+     "samenvatting": "Geen informatie over biodiversiteit"
+    },
+    "B6": {
+     "titel": "Water",
+     "status": "ontbrekend",
+     "bronnen": [],
+     "samenvatting": "Geen informatie over waterbeheer"
+    },
+    "B7": {
+     "titel": "Grondstoffen, circulariteit, afval",
+     "status": "ontbrekend",
+     "bronnen": [],
+     "samenvatting": "Geen informatie over circulariteit of afval"
+    },
+    "B8": {
+     "titel": "Personeel",
+     "status": "ontbrekend",
+     "bronnen": [],
+     "samenvatting": "Geen informatie over personeel of HR-beleid"
+    },
+    "B9": {
+     "titel": "Gezondheid en veiligheid",
+     "status": "ontbrekend",
+     "bronnen": [],
+     "samenvatting": "Geen informatie over gezondheid en veiligheid"
+    },
+    "B10": {
+     "titel": "Beloning, cao, opleiding",
+     "status": "ontbrekend",
+     "bronnen": [],
+     "samenvatting": "Geen informatie over beloning, cao of opleiding"
+    },
+    "B11": {
+     "titel": "Corruptie/omkoping",
+     "status": "ontbrekend",
+     "bronnen": [],
+     "samenvatting": "Geen informatie over anti-corruptiebeleid"
+    }
+   },
+   "ketenrisico": {
+    "cbam": {
+     "status": "afgeleid",
+     "waarde": "nee",
+     "bronnen": [],
+     "toelichting": "Geen import van staal, cement etc."
+    },
+    "eudr": {
+     "status": "afgeleid",
+     "waarde": "nee",
+     "bronnen": [],
+     "toelichting": "Geen handel in soja, palmolie, cacao etc."
+    },
+    "bouw_infra_gww": {
+     "status": "gevonden",
+     "waarde": "ja",
+     "bronnen": [
+      {
+       "url": "https://pcomanagement.nl/",
+       "datum": null,
+       "citaat": "projectmanagement ... technisch management ... reconstructie ... beekherstel ...",
+       "validatie": "gevonden"
+      }
+     ],
+     "toelichting": "Diensten en projecten in bouw/infrastructuur relevant voor CO2-Prestatieladder"
+    },
+    "levert_aan_grote_ondernemingen_of_overheid": {
+     "status": "afgeleid",
+     "waarde": "mogelijk overheid (waterschappen, gemeenten)",
+     "bronnen": [
+      {
+       "url": "https://pcomanagement.nl/",
+       "datum": null,
+       "citaat": "projecten: Beekherstel Sint‑Jansbeek, Reconstructie Teisterbandstraat Kerkdriel ...",
+       "validatie": "gevonden"
+      }
+     ],
+     "toelichting": "Projecten zoals beekherstel en reconstructie wijzen op overheidsopdrachtgevers"
+    }
+   },
+   "certificaten": [],
+   "samenvatting": {
+    "status": "gevonden",
+    "waarde": "PCO Management B.V. is een Schijndels adviesbureau dat projectmanagement, contractmanagement, omgevingsmanagement, technisch management, tendermanagement en directievoering levert voor bouw- en infrastructuurprojecten. Er zijn geen expliciete MVO- of duurzaamheidsinformatie, certificaten of beleid zichtbaar op de website.",
+    "bronnen": [
+     {
+      "url": "https://pcomanagement.nl/",
+      "datum": null,
+      "citaat": "managen van projecten ... projectmanagement ... contractmanagement ... omgevingsmanagement ... technisch management ... tendermanagement ... directievoering",
+      "validatie": "gevonden"
+     }
+    ],
+    "toelichting": null
+   },
+   "twijfelachtig": [],
+   "kansen_gesprek": [
+    "Zou het interessant zijn om CO₂-emissies en energiegebruik in kaart te brengen voor aanbestedingen?",
+    "Een MVO-beleid en certificering zoals CO₂-Prestatieladder kan uw kansen bij overheidsopdrachten vergroten.",
+    "Personeels- en veiligheidsbeleid zichtbaar maken versterkt uw MVO-profiel richting opdrachtgevers."
+   ],
+   "tenders_projecten": [],
+   "doorzochte_bronnen": [
+    "https://pcomanagement.nl/",
+    "https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html",
+    "https://lb.kompass.com/c/pco-management-b-v/nlc9929413/"
+   ]
+  },
+  "claimcheck": [],
+  "mvo_register": {
+   "status": "niet_gevonden",
+   "matches": [],
+   "gezocht_op": "PCO Management B.V.",
+   "gecontroleerd_op": "2026-10-18T20:20:35.926Z"
+  },
+  "onderzoek_op": "2026-10-18T20:20:34.702Z",
+  "aangemaakt_op": "2026-10-18T20:20:13.776Z",
+  "onderzoek_model": "gpt-4.1",
+  "web_research_tekst": "Hieronder de feiten over het Nederlandse bedrijf “PCO Management B.V.” (ook aangeduid als “pcomanagement”) in Schijndel, met bronvermelding. Waar informatie niet gevonden is, vermeld ik dat expliciet.\n\n1. **KvK‑nummer**  \n   - Het bedrijf is ingeschreven bij de Kamer van Koophandel onder KvK‑nummer **86746626** ([drimble.nl](https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html?utm_source=openai)).\n\n2. **Aantal medewerkers / FTE**  \n   - Volgens de beschikbare gegevens heeft PCO Management B.V. **1 werknemer** ([drimble.nl](https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html?utm_source=openai)).  \n   - Dit is het enige cijfer dat gevonden is; verdere details over FTE of personeelsomvang zijn niet beschikbaar.\n\n3. **Sector / SBI‑code**  \n   - Volgens Drimble is de SBI‑code **78202**, omschreven als “Uitleenbureaus” ([drimble.nl](https://drimble.nl/bedrijf/schijndel/39084329/pco-management.html?utm_source=openai)).  \n   - Volgens Kompass valt het bedrijf onder “Activiteiten van ingenieurs en overig technisch ontwerp en advies” met SBI‑code **71120** ([lb.kompass.com](https://lb.kompass.com/c/pco-management-b-v/nlc9929413/?utm_source=openai)).  \n   - Conclusie: er zijn twee verschillende classificaties gevonden; geen eenduidige sector.\n\n4. **Certificaten: ISO 14001, EcoVadis, B Corp, CO₂‑Prestatieladder, SBTi**  \n   - **ISO 14001**: geen informatie gevonden.  \n   - **EcoVadis score**: niet gevonden.  \n   - **B Corp**: niet gevonden.  \n   - **CO₂‑Prestatieladder niveau**: niet gevonden.  \n   - **SBTi‑commitment**: niet gevonden.  \n   → Conclusie: er is geen bewijs gevonden dat PCO Management B.V. beschikt over deze certificeringen of scores.\n\n5. **Belangrijkste klanten / afnemers**  \n   - Geen informatie gevonden over klanten of afnemers van PCO Management B.V.\n\n6. **Producten (zoals soja, palmolie, rundvee, cacao, koffie, rubber, hout, staal, aluminium, cement voor EUDR/CBAM)**  \n   - Geen informatie gevonden dat PCO Management B.V. producten levert of handelt in soja, palmolie, rundvee, cacao, koffie, rubber, hout, staal, aluminium of cement.  \n   - Het bedrijf lijkt zich te richten op engineering/advies of uitleenactiviteiten, niet op grondstoffen.\n\n7. **Relevante ESG / duurzaamheid nieuws**  \n   - Geen nieuws of informatie gevonden over ESG-initiatieven, duurzaamheid, of gerelateerde ontwikkelingen met betrekking tot PCO Management B.V.\n\nSamenvattend:\n\n- KvK‑nummer: 86746626  \n- Aantal medewerkers: 1 werknemer  \n- Sector / SBI‑code: 78202 (uitleenbureaus) en mogelijk 71120 (technisch ontwerp en advies)  \n- Certificaten (ISO 14001, EcoVadis, B Corp, CO₂‑Prestatieladder, SBTi): geen gevonden  \n- Klanten / afnemers: geen gevonden  \n- Producten (grondstoffen): geen gevonden  \n- ESG / duurzaamheid nieuws: geen gevonden\n\nLaat het gerust weten als je wilt dat ik verder zoek of andere bronnen raadpleeg.",
+  "onderzoek_webbronnen": []
+ }
+}

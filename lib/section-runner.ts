@@ -1,5 +1,6 @@
 import { getDb, isUsingSupabase } from './db';
 import type { SectionName } from './section-versions';
+export { mergeWithEditedFields } from './merge-edited-fields';
 
 export interface SectionJob {
   id: number;
@@ -105,35 +106,3 @@ export async function saveDossierVersion(
   }
 }
 
-// Helper to preserve manually edited fields
-export function mergeWithEditedFields(
-  newData: any,
-  oldData: any,
-  editedFields: string[]
-): any {
-  if (!editedFields || editedFields.length === 0) return newData;
-
-  const result = { ...newData };
-
-  for (const path of editedFields) {
-    const keys = path.split('.');
-    let oldValue: any = oldData;
-    let newValue: any = result;
-
-    // Navigate to the parent
-    for (let i = 0; i < keys.length - 1; i++) {
-      const key = keys[i];
-      oldValue = oldValue?.[key];
-      if (!newValue[key]) newValue[key] = {};
-      newValue = newValue[key];
-    }
-
-    // Set the final key to the old (manually edited) value
-    const finalKey = keys[keys.length - 1];
-    if (oldValue && finalKey in oldValue) {
-      newValue[finalKey] = oldValue[finalKey];
-    }
-  }
-
-  return result;
-}

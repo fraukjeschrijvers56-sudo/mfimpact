@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, isUsingSupabase } from '@/lib/db';
-import { createSectionJob, updateSectionJob, saveDossierVersion, mergeWithEditedFields } from '@/lib/section-runner';
+import { createSectionJob, updateSectionJob, saveDossierVersion } from '@/lib/section-runner';
+import { mergeWithEditedFields, stripOnderzoekPrefix } from '@/lib/merge-edited-fields';
 import { createSectionMetadata, type SectionName, SECTION_NAMES } from '@/lib/section-versions';
 
 export const dynamic = 'force-dynamic';
@@ -367,12 +368,16 @@ async function processSectionAsync(
 
       await updateSectionJob(jobId, { progress: 80 });
 
-      // Merge new data with existing, preserving manually edited fields
+      // Merge new data with existing, preserving manually edited fields.
+      // edited_fields are stored as dossier-level paths (`onderzoek.gesprek.next_steps`)
+      // while we merge at onderzoek-level — strip the prefix so we do not write
+      // junk keys like onderzoek.onderzoek.gesprek.
       const onderzoekData = dossier.onderzoek || {};
+      const normalizedEditedFields = (editedFields || []).map((f: string) => stripOnderzoekPrefix(f));
       const mergedData = mergeWithEditedFields(
         { ...onderzoekData, ...newSectionData },
         onderzoekData,
-        editedFields.filter((f: string) => f.startsWith(`onderzoek.${sectionName}`))
+        normalizedEditedFields
       );
 
       dossier.onderzoek = mergedData;
