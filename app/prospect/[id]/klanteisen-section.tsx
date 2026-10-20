@@ -53,10 +53,10 @@ export function KlanteisenSection({ clientId, dossier }: Props) {
               <p className="text-sm text-emerald-200/70">Wat uw klanten gaan vragen · Peildatum: {PEILDATUM}</p>
             </div>
           </div>
-          <SectionRefreshButton clientId={clientId} section="klanteisen" label="Analyseren" />
+          <SectionRefreshButton clientId={clientId} section="klanteisen" label="Klanteisen ophalen" />
         </div>
         <p className="text-emerald-100/70 italic mb-3">
-          Nog niet geanalyseerd. Klik op 'Analyseren' om klanttypen te detecteren en eisen te matchen.
+          Nog niet geanalyseerd. Klik op '↻ Vernieuw Klanteisen ophalen' om klanttypen te detecteren en eisen te matchen.
         </p>
         <SectionMetadataBadge section="klanteisen" metadata={metadata} />
       </section>

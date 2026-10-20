@@ -159,30 +159,127 @@ async function processSectionAsync(
               clientRecord = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId);
             }
             
+            // Build onderzoek_json from dossier.onderzoek when onderzoek_ruw is empty
+            // Include key fields: profiel, tenders_projecten, certificaten, vsme_basic, doorzochte_bronnen
+            const onderzoekInput = {
+              profiel: {
+                ...profiel,
+                sector: profiel.sector || profiel.sbi,
+                producten_diensten: profiel.producten_diensten || profiel.producten,
+                afnemers_markten: profiel.afnemers_markten || profiel.afnemers,
+                belangrijkste_klanten_referenties: profiel.belangrijkste_klanten_referenties || profiel.referenties || profiel.belangrijkste_klanten,
+              },
+              tenders_projecten: onderzoek.tenders_projecten || onderzoek.tenders || [],
+              certificaten: onderzoek.certificaten || [],
+              vsme_basic: onderzoek.vsme_basic || onderzoek.vsme || {},
+              doorzochte_bronnen: onderzoek.doorzochte_bronnen || [],
+              kansen_gesprek: onderzoek.kansen_gesprek || [],
+            };
+            
             // Fill placeholders
-            promptTemplate = promptTemplate.replace('{naam}', profiel.handelsnaam || clientRecord?.naam || 'de prospect');
-            promptTemplate = promptTemplate.replace('{url}', clientRecord?.website_url || 'onbekend');
-            promptTemplate = promptTemplate.replace('{plaats}', profiel.hoofdvestiging || clientRecord?.plaats || 'onbekend');
-            promptTemplate = promptTemplate.replace('{onderzoek_json}', JSON.stringify(onderzoek, null, 2));
-            promptTemplate = promptTemplate.replace('{kennisbank_json}', JSON.stringify(KLANTEISEN_KB, null, 2));
+            const naam = profiel.handelsnaam || clientRecord?.naam || 'de prospect';
+            const url = clientRecord?.website_url || 'onbekend';
+            const plaats = profiel.hoofdvestiging || clientRecord?.plaats || 'onbekend';
             
-            // TODO: Call OpenAI with promptTemplate and web_search enabled
-            // For now, structure the output correctly but keep existing data
-            const existingKlanteisen = onderzoek.klanteisen || {};
+            promptTemplate = promptTemplate.replace(/\{naam\}/g, naam);
+            promptTemplate = promptTemplate.replace(/\{url\}/g, url);
+            promptTemplate = promptTemplate.replace(/\{plaats\}/g, plaats);
+            promptTemplate = promptTemplate.replace(/\{onderzoek_json\}/g, JSON.stringify(onderzoekInput, null, 2));
+            promptTemplate = promptTemplate.replace(/\{kennisbank_json\}/g, JSON.stringify(KLANTEISEN_KB, null, 2));
             
-            // Map old structure to new structure for backwards compat
+            // Call OpenAI with web_search enabled
+            const apiKey = process.env.OPENAI_API_KEY;
+            if (!apiKey) {
+              throw new Error('OPENAI_API_KEY ontbreekt in omgevingsvariabelen');
+            }
+            
+            console.log(`[Klanteisen ${clientId}] Calling OpenAI for ${naam}...`);
+            
+            const models = ['gpt-4o', 'gpt-4-turbo'];
+            let result: any = null;
+            
+            for (const model of models) {
+              try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    model,
+                    messages: [
+                      { role: 'user', content: promptTemplate }
+                    ],
+                    tools: [{ type: 'web_search_preview' }],
+                    max_tokens: 4000,
+                    temperature: 0.1,
+                  }),
+                  signal: AbortSignal.timeout(120000), // 2 min timeout
+                });
+
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  console.error(`[Klanteisen ${clientId}] Model ${model} failed:`, response.status, errorText);
+                  continue;
+                }
+
+                const data = await response.json();
+                const content = data.choices?.[0]?.message?.content;
+                
+                if (content) {
+                  console.log(`[Klanteisen ${clientId}] Got response from ${model}, length: ${content.length}`);
+                  
+                  // Parse JSON robustly
+                  const jsonMatch = content.match(/```json\s*\n?([\s\S]*?)\n?```/);
+                  const jsonStr = jsonMatch ? jsonMatch[1] : content;
+                  
+                  try {
+                    result = JSON.parse(jsonStr);
+                    console.log(`[Klanteisen ${clientId}] Parsed JSON successfully`);
+                    break;
+                  } catch (parseError) {
+                    console.error(`[Klanteisen ${clientId}] JSON parse error:`, parseError);
+                    console.error('Content:', content.substring(0, 500));
+                    continue;
+                  }
+                }
+              } catch (modelError) {
+                console.error(`[Klanteisen ${clientId}] Model ${model} error:`, modelError);
+                continue;
+              }
+            }
+            
+            if (!result) {
+              throw new Error('OpenAI antwoordde niet met geldig JSON na alle modelpogingen');
+            }
+            
+            // Validate result has meaningful data
+            const klanttypen = result.klanttypen || [];
+            const eisen = result.eisen || [];
+            const tendertreffers = result.tendertreffers || [];
+            const aanknopingspunten = result.aanknopingspunten || [];
+            
+            if (klanttypen.length === 0 && eisen.length === 0 && aanknopingspunten.length === 0) {
+              throw new Error(`Geen klanttypen, eisen of aanknopingspunten gevonden. Dit kan betekenen dat het onderzoek onvoldoende informatie bevat over klanten/referenties van ${naam}. Controleer of profiel.belangrijkste_klanten_referenties gevuld is.`);
+            }
+            
+            console.log(`[Klanteisen ${clientId}] Success: ${klanttypen.length} klanttypen, ${eisen.length} eisen, ${tendertreffers.length} tenders, ${aanknopingspunten.length} aanknopingspunten`);
+            
+            // Structure output
             newSectionData = {
               klanteisen: {
-                klanttypen: existingKlanteisen.klanttypen || [],
-                eisen: existingKlanteisen.eisen || [],
-                tendertreffers: existingKlanteisen.concrete_tenders || existingKlanteisen.tendertreffers || [],
-                aanknopingspunten: existingKlanteisen.aanknopingspunten || [],
+                klanttypen,
+                eisen,
+                tendertreffers,
+                aanknopingspunten,
                 // Keep old structure for compat
-                concrete_tenders: existingKlanteisen.concrete_tenders || [],
+                concrete_tenders: tendertreffers,
               },
             };
           } catch (error: any) {
-            throw new Error(`Klanteisen processing failed: ${error.message}`);
+            console.error(`[Klanteisen ${clientId}] Error:`, error);
+            throw new Error(`Klanteisen ophalen mislukt: ${error.message}`);
           }
           break;
 

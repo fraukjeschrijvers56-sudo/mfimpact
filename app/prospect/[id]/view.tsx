@@ -182,7 +182,17 @@ export function ProspectView({ client }: { client: any }) {
         {/* PROFIEL */}
         <SectionWrapper clientId={client.id} section="profiel" sectionMetadata={sectionMetadata} refreshLabel="Profiel vernieuwen">
           <Section id="profiel" title="Bedrijfsprofiel" icon={<Building2 className="w-5 h-5" />}>
-            {Object.keys(profiel).length > 0 ? <FieldGrid obj={profiel} cols={3} skip={['omzet', 'aantal_medewerkers', 'balanstotaal'].filter((k) => isUnknown(fieldValue(profiel[k])))} /> : <p className="text-slate-300 italic">Geen profiel uit het diepteonderzoek. <button className="text-emerald-300 hover:text-white underline font-medium">Nu genereren</button></p>}
+            {Object.keys(profiel).length > 0 ? (
+              <>
+                <FieldGrid obj={profiel} cols={3} skip={['omzet', 'aantal_medewerkers', 'balanstotaal', 'belangrijkste_klanten_referenties'].filter((k) => isUnknown(fieldValue(profiel[k])))} />
+                {/* Show belangrijkste klanten/referenties prominently if present */}
+                {!isUnknown(fieldValue(profiel.belangrijkste_klanten_referenties)) && (
+                  <div className="mt-4 pt-4 border-t border-emerald-700/50">
+                    <FieldRow label="Belangrijkste klanten / referenties" field={profiel.belangrijkste_klanten_referenties} />
+                  </div>
+                )}
+              </>
+            ) : <p className="text-slate-300 italic">Geen profiel uit het diepteonderzoek. <button className="text-emerald-300 hover:text-white underline font-medium">Nu genereren</button></p>}
           </Section>
         </SectionWrapper>
 
