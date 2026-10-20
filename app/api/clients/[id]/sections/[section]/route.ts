@@ -189,7 +189,7 @@ async function processSectionAsync(
             },
             klanteisInput,
             apiKey,
-            120000
+            240000
           );
           
           if (result.error || !result.data) {
@@ -275,7 +275,7 @@ async function processSectionAsync(
             },
             researchInput,
             apiKey,
-            90000
+            240000
           );
           
           if (result.error || !result.data) {
@@ -323,7 +323,7 @@ async function processSectionAsync(
             },
             researchInput,
             apiKey,
-            90000
+            240000
           );
           
           if (result.error || !result.data) {

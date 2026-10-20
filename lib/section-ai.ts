@@ -1,6 +1,6 @@
 /**
  * Shared AI helper for section-specific analysis
- * Uses research-engine model config (gpt-4.1 + web_search, fallback gpt-4o + web_search_preview)
+ * Uses Responses API with web_search like research-engine (gpt-4.1 + web_search, fallback gpt-4o + web_search_preview)
  */
 
 import { readFileSync } from 'fs';
@@ -16,6 +16,7 @@ export interface SectionAIConfig {
 export interface SectionAIResult {
   data: any;
   model: string;
+  citations: Array<{ url: string; title?: string }>;
   error?: string;
 }
 
@@ -58,12 +59,12 @@ function extractJsonObject(text: string): any | null {
 }
 
 /**
- * Call OpenAI for section-specific analysis
- * Uses gpt-4.1 + web_search (fallback gpt-4o + web_search_preview) like research-engine
+ * Call OpenAI Responses API for section-specific analysis
+ * Uses gpt-4.1 + web_search (fallback gpt-4o + web_search_preview) exactly like performDossierResearch
  */
 export async function callSectionAI(
   config: SectionAIConfig,
-  input: any, // The onderzoek_ruw or full onderzoek to analyze
+  input: any,
   apiKey: string,
   timeoutMs: number = 120000
 ): Promise<SectionAIResult> {
@@ -85,7 +86,7 @@ export async function callSectionAI(
     promptWithInput = promptWithInput.replace(/\{onderzoek_json\}/g, JSON.stringify(input, null, 2));
   }
   
-  const models: Array<{ model: string; tool: string }> = config.useWebSearch
+  const attempts: Array<{ model: string; tool: string }> = config.useWebSearch
     ? [
         { model: 'gpt-4.1', tool: 'web_search' },
         { model: 'gpt-4o', tool: 'web_search_preview' },
@@ -96,28 +97,31 @@ export async function callSectionAI(
       ];
   
   const started = Date.now();
+  let lastError = 'onbekende fout';
   
-  for (const attempt of models) {
+  for (const attempt of attempts) {
     const remaining = timeoutMs - (Date.now() - started);
-    if (remaining < 10000) break;
+    if (remaining < 20000) {
+      lastError = 'timeout: niet genoeg tijd over voor nog een poging';
+      break;
+    }
     
     try {
-      console.log(`[Section ${config.sectionName}] Calling ${attempt.model}${attempt.tool ? ` with ${attempt.tool}` : ''}...`);
+      console.log(`[Section ${config.sectionName}] Via Responses API: ${attempt.model}${attempt.tool ? ` + ${attempt.tool}` : ''}`);
       
       const body: any = {
         model: attempt.model,
-        messages: [
-          { role: 'user', content: promptWithInput }
-        ],
-        max_tokens: 4000,
+        instructions: `Je bent een ESG/MVO-onderzoeker. Analyseer de verstrekte data en produceer uitsluitend geldig JSON.`,
+        input: promptWithInput,
+        max_output_tokens: 16000,
         temperature: 0.1,
       };
       
       if (attempt.tool) {
-        body.tools = [{ type: attempt.tool }];
+        body.tools = [{ type: attempt.tool, search_context_size: 'high' }];
       }
       
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://api.openai.com/v1/responses', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -129,25 +133,39 @@ export async function callSectionAI(
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[Section ${config.sectionName}] ${attempt.model} failed: ${response.status} ${errorText.substring(0, 200)}`);
+        lastError = `OpenAI ${response.status}: ${errorText.slice(0, 300)}`;
+        console.error(`[Section ${config.sectionName}] ${attempt.model} failed:`, lastError);
         continue;
       }
       
       const data = await response.json();
-      const content = data.choices?.[0]?.message?.content;
+      let text = typeof data.output_text === 'string' ? data.output_text : '';
+      const citations: Array<{ url: string; title?: string }> = [];
+      const seen = new Set<string>();
       
-      if (!content) {
-        console.error(`[Section ${config.sectionName}] ${attempt.model} returned no content`);
-        continue;
+      // Parse output like research-engine does
+      for (const item of data.output || []) {
+        if (item?.type !== 'message') continue;
+        for (const c of item.content || []) {
+          if (c?.type === 'output_text') {
+            if (!data.output_text) text += c.text || '';
+            for (const a of c.annotations || []) {
+              if (a?.type === 'url_citation' && a.url && !seen.has(a.url)) {
+                seen.add(a.url);
+                citations.push({ url: a.url, title: a.title });
+              }
+            }
+          }
+        }
       }
       
-      console.log(`[Section ${config.sectionName}] Got response from ${attempt.model}, length: ${content.length}`);
+      console.log(`[Section ${config.sectionName}] Got response from ${attempt.model}, text length: ${text.length}, citations: ${citations.length}`);
       
       // Parse JSON
-      const parsed = extractJsonObject(content);
+      const parsed = extractJsonObject(text);
       if (!parsed) {
-        console.error(`[Section ${config.sectionName}] ${attempt.model} returned invalid JSON`);
-        console.error('Content preview:', content.substring(0, 500));
+        lastError = 'ongeldige JSON in antwoord';
+        console.error(`[Section ${config.sectionName}] ${attempt.model}: no valid JSON, text preview:`, text.substring(0, 500));
         continue;
       }
       
@@ -160,22 +178,28 @@ export async function callSectionAI(
       });
       
       if (!hasExpectedData) {
+        lastError = `geen bruikbare data in ${config.schemaKeys.join(', ')}`;
+        console.log(`[Section ${config.sectionName}] Empty result from ${attempt.model}`);
         return {
           data: parsed,
           model: attempt.model,
-          error: `Geen bruikbare data gevonden voor ${config.schemaKeys.join(', ')}. Het onderzoek bevat mogelijk onvoldoende informatie voor deze sectie.`,
+          citations,
+          error: `Geen bruikbare data gevonden voor ${config.schemaKeys.join(', ')}. Het onderzoek bevat mogelijk onvoldoende informatie voor deze sectie. Laatste fout: ${lastError}`,
         };
       }
       
       return {
         data: parsed,
         model: attempt.model,
+        citations,
       };
       
-    } catch (error) {
-      console.error(`[Section ${config.sectionName}] ${attempt.model} error:`, error);
-      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
-        break; // No time for another attempt
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+      console.error(`[Section ${config.sectionName}] ${attempt.model} error:`, lastError);
+      if (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+        lastError = 'timeout overschreden';
+        break;
       }
       continue;
     }
@@ -184,6 +208,7 @@ export async function callSectionAI(
   return {
     data: null,
     model: '',
-    error: `Alle AI-modellen faalden voor sectie ${config.sectionName}. Controleer of de OpenAI API-sleutel geldig is en of het onderzoek voldoende informatie bevat.`,
+    citations: [],
+    error: `Alle AI-modellen faalden voor sectie ${config.sectionName}. Laatste fout: ${lastError}`,
   };
 }
