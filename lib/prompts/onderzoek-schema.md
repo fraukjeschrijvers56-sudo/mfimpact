@@ -25,6 +25,10 @@ Een VELD heeft altijd de vorm: {"waarde": <tekst, getal of lijst>, "status": "ge
   "tenders_projecten": [{"titel": <tekst>, "opdrachtgever": <tekst of null>, "datum": <tekst of null>, "url": <url>}],
   "personen": [{"naam": <tekst>, "functie": <tekst>, "url": <url of null>}],
   "claims": [{"citaat": <letterlijk>, "url": <url>, "type": "generiek" | "klimaatneutraal/compensatie" | "label" | "toekomstclaim" | "vergelijkend" | "specifiek", "beoordeling": "rood" | "oranje" | "groen", "toelichting": <tekst>, "herschrijfvoorstel": <tekst>}],
+  "klanteisen": {
+    "klanttypen": [{"type": <klanttype>, "onderbouwing": <tekst>, "bronnen": [{"url": <url>, "citaat": <citaat>}]}],
+    "concrete_tenders": [{"opdrachtgever": <tekst>, "tender": <tekst>, "eis": <tekst>, "niveau": <tekst>, "url": <url>, "datum": <datum of null>}]
+  },
   "gaten": [{"onderdeel": <tekst>, "prioriteit": "hoog" | "middel" | "laag", "waarom": <tekst>, "bewijsactie": <tekst>}],
   "kansen_gesprek": [<korte gespreksopeners of verkoopkansen voor een MVO-bewijsadviseur, op basis van de gevonden feiten>],
   "twijfelachtig": [{"gegeven": <tekst>, "reden": <tekst>, "bronnen": [...]}],

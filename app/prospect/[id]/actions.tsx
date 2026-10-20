@@ -2,10 +2,34 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Pencil, Trash2, RefreshCw } from 'lucide-react';
+import { Pencil, Trash2, RefreshCw, FileText } from 'lucide-react';
+import { useState } from 'react';
 
 export function ProspectActions({ client }: { client: any }) {
   const router = useRouter();
+  const [generatingReport, setGeneratingReport] = useState(false);
+
+  const generateReport = async (format: 'docx' | 'pptx' | 'pdf') => {
+    setGeneratingReport(true);
+    try {
+      const response = await fetch(`/api/clients/${client.id}/rapport?format=${format}`);
+      if (!response.ok) throw new Error('Failed to generate report');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rapport-${client.naam || 'prospect'}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to generate report');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
 
   const deleteProspect = async () => {
     if (!confirm('Weet je het zeker? Deze prospect wordt permanent verwijderd.')) {
@@ -51,6 +75,43 @@ export function ProspectActions({ client }: { client: any }) {
       >
         <Pencil className="w-4 h-4" /> Bewerken
       </Link>
+      
+      <div className="relative">
+        <button
+          onClick={() => generateReport('docx')}
+          disabled={generatingReport}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-indigo-700/60 text-indigo-100 hover:bg-indigo-600 font-medium disabled:opacity-50 w-full"
+          title="Rapport opstellen (Word)"
+          aria-label="Rapport opstellen"
+        >
+          <FileText className="w-4 h-4" /> {generatingReport ? 'Genereren...' : 'Rapport opstellen'}
+        </button>
+        {!generatingReport && (
+          <div className="absolute top-full left-0 right-0 mt-1 hidden group-hover:block z-10">
+            <div className="bg-emerald-900 rounded-lg shadow-lg border border-emerald-700 p-1">
+              <button
+                onClick={() => generateReport('docx')}
+                className="w-full text-left px-3 py-1 text-sm text-white hover:bg-emerald-800 rounded"
+              >
+                Word (.docx)
+              </button>
+              <button
+                onClick={() => generateReport('pptx')}
+                className="w-full text-left px-3 py-1 text-sm text-white hover:bg-emerald-800 rounded"
+              >
+                PowerPoint (.pptx)
+              </button>
+              <button
+                onClick={() => generateReport('pdf')}
+                className="w-full text-left px-3 py-1 text-sm text-white hover:bg-emerald-800 rounded"
+              >
+                PDF (.pdf)
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+      
       <button
         onClick={reAnalyze}
         className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-violet-700/60 text-violet-100 hover:bg-violet-600 font-medium"

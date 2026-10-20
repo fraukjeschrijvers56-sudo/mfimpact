@@ -9,6 +9,7 @@ const navigation = [
   { name: 'Scan & gatanalyse', href: '/scan', icon: '🔍' },
   { name: 'Wetgeving & drempels', href: '/wetgeving', icon: '📋' },
   { name: 'Claimcheck', href: '/claimcheck', icon: '✓' },
+  { name: 'Instellingen', href: '/instellingen', icon: '⚙️' },
 ];
 
 export default function Sidebar() {

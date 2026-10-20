@@ -11,6 +11,7 @@ import {
 import { Section, Badge, Bronnen, Waarde, FieldGrid, FieldRow, Generic, SourceLink, Stat } from './parts';
 import { ProspectActions } from './actions';
 import { MvoRegisterCard } from './mvo-register-card';
+import { KlanteisenSection } from './klanteisen-section';
 
 
 const VSME_TITLES: Record<string, string> = {
@@ -81,8 +82,8 @@ export function ProspectView({ client }: { client: any }) {
   const thresholdList = [thresholds.csrd, thresholds.valueChainCap, thresholds.csddd, thresholds.euTaxonomy, thresholds.eudr, thresholds.cbam, thresholds.nlEnergySaving, thresholds.co2Prestatieladder];
 
   const nav = [
-    ['profiel', 'Profiel'], ['vsme', 'VSME B1–B11'], ['ketenrisico', 'Ketenrisico & wetgeving'], ['certificaten', 'Certificaten'],
-    ['claims', 'Claims'], ['gaten', 'Gaten'], ['nieuws', 'Nieuws & projecten'], ['personen', 'Personen'], ['bronnen', 'Bronnen'],
+    ['profiel', 'Profiel'], ['klanteisen', 'Wat uw klanten gaan vragen'], ['vsme', 'VSME B1–B11'], ['ketenrisico', 'Ketenrisico & wetgeving'],
+    ['certificaten', 'Certificaten'], ['claims', 'Claims'], ['gaten', 'Gaten'], ['nieuws', 'Nieuws & projecten'], ['personen', 'Personen'], ['bronnen', 'Bronnen'],
   ];
 
   return (
@@ -162,6 +163,9 @@ export function ProspectView({ client }: { client: any }) {
 
         {/* MVO-REGISTER */}
         <MvoRegisterCard clientId={client.id} data={mvoRegister} />
+
+        {/* KLANTEISEN */}
+        <KlanteisenSection dossier={dossier} />
 
         {/* KANSEN */}
         {kansen.length > 0 && (

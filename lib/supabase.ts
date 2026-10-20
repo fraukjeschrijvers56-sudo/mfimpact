@@ -33,3 +33,6 @@ export function getSupabaseClient(): SupabaseClient | null {
 export function isSupabaseConfigured(): boolean {
   return !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
+
+// Alias for clarity when using Storage API
+export const getSupabaseServiceRole = getSupabaseClient;
