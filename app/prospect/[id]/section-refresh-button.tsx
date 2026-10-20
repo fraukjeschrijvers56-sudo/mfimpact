@@ -35,15 +35,15 @@ export function SectionRefreshButton({ clientId, section, label, className }: Pr
       const data = await response.json();
       const jobId = data.jobId;
 
-      // Poll for completion
+      // Poll for completion (up to 5 minutes)
       let attempts = 0;
-      const maxAttempts = 30; // 30 seconds max
+      const maxAttempts = 150; // 5 minutes (150 * 2s = 300s)
       const pollInterval = setInterval(async () => {
         attempts++;
         if (attempts > maxAttempts) {
           clearInterval(pollInterval);
           setRefreshing(false);
-          alert('Vernieuwen duurt langer dan verwacht. Probeer de pagina te verversen.');
+          alert('Vernieuwen duurt langer dan verwacht. De verwerking loopt mogelijk nog. Ververs de pagina over een minuut om te controleren.');
           return;
         }
 
@@ -67,7 +67,7 @@ export function SectionRefreshButton({ clientId, section, label, className }: Pr
         } catch (error) {
           console.error('Poll error:', error);
         }
-      }, 1000);
+      }, 2000); // Poll every 2 seconds
     } catch (error) {
       setRefreshing(false);
       alert(error instanceof Error ? error.message : 'Vernieuwen mislukt');

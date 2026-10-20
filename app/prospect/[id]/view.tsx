@@ -12,6 +12,7 @@ import { Section, Badge, Bronnen, Waarde, FieldGrid, FieldRow, Generic, SourceLi
 import { ProspectActions } from './actions';
 import { MvoRegisterCard } from './mvo-register-card';
 import { KlanteisenSection } from './klanteisen-section';
+import { VersionHistory } from './version-history';
 
 
 const VSME_TITLES: Record<string, string> = {
@@ -105,11 +106,14 @@ export function ProspectView({ client }: { client: any }) {
               </div>
               {!isUnknown(samenvatting) && <p className="text-lg leading-relaxed text-white/95 max-w-4xl">{samenvatting}</p>}
             </div>
-            <div className="flex flex-col gap-2 self-start">
-              <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-400 text-emerald-950 font-semibold hover:bg-emerald-300">
-                <Plus className="w-4 h-4" /> Nieuwe prospect
-              </Link>
-              <ProspectActions client={client} />
+            <div className="flex flex-col gap-4 self-start min-w-[280px]">
+              <div className="flex flex-col gap-2">
+                <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-400 text-emerald-950 font-semibold hover:bg-emerald-300">
+                  <Plus className="w-4 h-4" /> Nieuwe prospect
+                </Link>
+                <ProspectActions client={client} />
+              </div>
+              <VersionHistory clientId={client.id} />
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mt-6">

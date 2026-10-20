@@ -4,7 +4,7 @@ import { createSectionJob, updateSectionJob, saveDossierVersion, mergeWithEdited
 import { createSectionMetadata, type SectionName, SECTION_NAMES } from '@/lib/section-versions';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // 60 seconds for section refresh
+export const maxDuration = 300; // 5 minutes for section refresh
 
 export async function POST(
   request: NextRequest,
@@ -70,11 +70,96 @@ export async function POST(
     const jobId = await createSectionJob(parseInt(id), sectionName);
 
     // Start async processing
-    // For now, do it synchronously (can be refactored to use Next.js after() or Vercel waitUntil)
+    // Try to use unstable_after if available (Next.js 15+), otherwise process synchronously
+    try {
+      const nextServer = await import('next/server');
+      const unstable_after = (nextServer as any).unstable_after;
+      
+      if (typeof unstable_after === 'function') {
+        // Return immediately with jobId, processing continues in background
+        const response = NextResponse.json({
+          success: true,
+          jobId,
+          status: 'queued',
+          message: 'Section refresh started',
+        });
+
+        unstable_after(async () => {
+          await processSectionAsync(
+            parseInt(id),
+            sectionName,
+            jobId,
+            dossier,
+            onderzoekRuw,
+            sectionMetadata,
+            editedFields
+          );
+        });
+
+        return response;
+      }
+    } catch (error) {
+      console.log('unstable_after not available, processing synchronously');
+    }
+
+    // Fallback: process synchronously
+    await processSectionAsync(
+      parseInt(id),
+      sectionName,
+      jobId,
+      dossier,
+      onderzoekRuw,
+      sectionMetadata,
+      editedFields
+    );
+
+    return NextResponse.json({
+      success: true,
+      jobId,
+      status: 'done',
+      message: 'Section refresh completed',
+    });
+  } catch (error) {
+    console.error('Error starting section refresh:', error);
+    return NextResponse.json(
+      { error: 'Failed to start section refresh', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
+async function processSectionAsync(
+  clientId: number,
+  sectionName: SectionName,
+  jobId: number,
+  dossier: any,
+  onderzoekRuw: any,
+  sectionMetadata: any,
+  editedFields: string[]
+) {
+  const db = getDb();
+  
+  try {
     await updateSectionJob(jobId, { status: 'running', started_at: new Date().toISOString(), progress: 10 });
 
+    // Prepare research input (use onderzoek_ruw or fall back to existing dossier bronnen)
+    let researchInput: any;
+    if (onderzoekRuw && Object.keys(onderzoekRuw).length > 0) {
+      researchInput = onderzoekRuw;
+    } else {
+      // Fallback for old dossiers without onderzoek_ruw
+      const onderzoek = dossier.onderzoek || dossier;
+      researchInput = {
+        bronnen: onderzoek.doorzochte_bronnen || [],
+        profiel: onderzoek.profiel || {},
+        existing_data: onderzoek,
+      };
+    }
+
+    await updateSectionJob(jobId, { progress: 30 });
+
     try {
-      // Simulate section processing based on section type
+      // Process section based on type
       let newSectionData: any = {};
 
       switch (sectionName) {
@@ -84,7 +169,8 @@ export async function POST(
           const onderzoek = dossier.onderzoek || dossier;
           const klanteisen = onderzoek.klanteisen || { klanttypen: [], concrete_tenders: [] };
           
-          // In a real implementation, this would call an AI model with the klanteisen prompt
+          // In a real implementation, this would call an AI model with lib/prompts/klanteisen.md
+          // Using researchInput as context
           // For now, just refresh the merge
           newSectionData = {
             klanteisen: klanteisen,
@@ -96,7 +182,13 @@ export async function POST(
         case 'vsme':
         case 'claimcheck':
         case 'tenders':
-          // For other sections, we'd call the AI with the section-specific prompt
+          // In a real implementation, these would call AI with section-specific prompts:
+          // - lib/prompts/profiel.md
+          // - lib/prompts/vsme.md (includes gaten)
+          // - lib/prompts/certificaten.md
+          // - lib/prompts/claimcheck.md
+          // - lib/prompts/tenders.md (uses TenderNed web search)
+          // Using researchInput as context
           // For now, keep existing data
           newSectionData = {};
           break;
@@ -122,10 +214,10 @@ export async function POST(
         await db.from('clients').update({
           dossier,
           section_metadata: sectionMetadata,
-        }).eq('id', id);
+        }).eq('id', clientId);
       } else {
         db.prepare('UPDATE clients SET dossier = ?, section_metadata = ? WHERE id = ?')
-          .run(JSON.stringify(dossier), JSON.stringify(sectionMetadata), id);
+          .run(JSON.stringify(dossier), JSON.stringify(sectionMetadata), clientId);
       }
 
       await updateSectionJob(jobId, {
@@ -134,25 +226,16 @@ export async function POST(
         completed_at: new Date().toISOString(),
       });
 
-      return NextResponse.json({
-        success: true,
-        jobId,
-        metadata: sectionMetadata[sectionName],
-      });
     } catch (error) {
       console.error(`Error processing section ${sectionName}:`, error);
       await updateSectionJob(jobId, {
         status: 'error',
         error_message: error instanceof Error ? error.message : 'Unknown error',
+        completed_at: new Date().toISOString(),
       });
-      throw error;
     }
   } catch (error) {
-    console.error('Error refreshing section:', error);
-    return NextResponse.json(
-      { error: 'Failed to refresh section', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    console.error(`Fatal error in async section processing:`, error);
   }
 }
 
