@@ -1,8 +1,16 @@
-import { Users, AlertTriangle, Award, ClipboardCheck, ExternalLink, Lightbulb } from 'lucide-react';
+import { Users, AlertTriangle, ClipboardCheck, ExternalLink, Lightbulb, Clock, MessageCircle } from 'lucide-react';
 import { mergeKlanteisen, PEILDATUM, INDICATIEF_LABEL, type EisNiveau } from '@/lib/klanteisen';
 import { Bronnen } from './parts';
 import { SectionRefreshButton } from './section-refresh-button';
 import { SectionMetadataBadge } from './section-metadata-badge';
+
+const VRAAG_CATEGORIES: Record<string, string> = {
+  klanten_tenders: 'Klanten & Tenders',
+  mvo_praktijk_data: 'MVO-praktijk & Data',
+  ambitie: 'Ambitie',
+  budget_tijdlijn: 'Budget & Tijdlijn',
+  besluitvorming: 'Besluitvorming',
+};
 
 interface Props {
   clientId: number;
@@ -11,6 +19,8 @@ interface Props {
 
 export function KlanteisenSection({ clientId, dossier }: Props) {
   const onderzoek = dossier.onderzoek || dossier;
+  const gesprek = onderzoek.gesprek || {};
+  const kansenGesprek: string[] = Array.isArray(onderzoek.kansen_gesprek) ? onderzoek.kansen_gesprek : [];
   const klanteisen = onderzoek.klanteisen || { 
     klanttypen: [], 
     concrete_tenders: [], 
@@ -39,8 +49,14 @@ export function KlanteisenSection({ clientId, dossier }: Props) {
     dossier
   );
 
-  // Empty state
-  if (!hasNewStructure && (!klanteisen.klanttypen || klanteisen.klanttypen.length === 0) && eisen.length === 0) {
+  const hasGesprekContent =
+    kansenGesprek.length > 0 ||
+    (Array.isArray(gesprek.agenda) && gesprek.agenda.length > 0) ||
+    (Array.isArray(gesprek.aannames) && gesprek.aannames.length > 0) ||
+    (gesprek.vragen && Object.values(gesprek.vragen).some((q: any) => Array.isArray(q) && q.length > 0));
+
+  // Empty state — still show the block when gesprek/kansen content exists
+  if (!hasNewStructure && (!klanteisen.klanttypen || klanteisen.klanttypen.length === 0) && eisen.length === 0 && !hasGesprekContent) {
     return (
       <section id="klanteisen" className="scroll-mt-24 rounded-2xl bg-emerald-950/85 border border-emerald-600/40 shadow-xl backdrop-blur-xl p-6">
         <div className="flex items-start justify-between gap-4 mb-4">
@@ -53,7 +69,15 @@ export function KlanteisenSection({ clientId, dossier }: Props) {
               <p className="text-sm text-emerald-200/70">Wat uw klanten gaan vragen · Peildatum: {PEILDATUM}</p>
             </div>
           </div>
-          <SectionRefreshButton clientId={clientId} section="klanteisen" label="Klanteisen ophalen" />
+          <div className="flex flex-col items-end gap-2">
+            <SectionRefreshButton clientId={clientId} section="klanteisen" label="Klanteisen ophalen" />
+            <SectionRefreshButton
+              clientId={clientId}
+              section="gesprek"
+              label="Gesprek voorbereiden"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-cyan-700/60 text-cyan-100 hover:bg-cyan-600 disabled:opacity-50 font-medium"
+            />
+          </div>
         </div>
         <p className="text-emerald-100/70 italic mb-3">
           Nog niet geanalyseerd. Klik op '↻ Vernieuw Klanteisen ophalen' om klanttypen te detecteren en eisen te matchen.
@@ -130,7 +154,15 @@ export function KlanteisenSection({ clientId, dossier }: Props) {
             <SectionMetadataBadge section="klanteisen" metadata={metadata} />
           </div>
         </div>
-        <SectionRefreshButton clientId={clientId} section="klanteisen" label="Analyseren" />
+        <div className="flex flex-col items-end gap-2">
+          <SectionRefreshButton clientId={clientId} section="klanteisen" label="Klanteisen ophalen" />
+          <SectionRefreshButton
+            clientId={clientId}
+            section="gesprek"
+            label="Gesprek voorbereiden"
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-cyan-700/60 text-cyan-100 hover:bg-cyan-600 disabled:opacity-50 font-medium"
+          />
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -301,31 +333,114 @@ export function KlanteisenSection({ clientId, dossier }: Props) {
           ))
         )}
         
-        {/* AANKNOPINGSPUNTEN */}
-        {sortedAanknopingspunten.length > 0 && (
+        {/* AANKNOPINGSPUNTEN — klanteisen first, else kansen_gesprek */}
+        {(sortedAanknopingspunten.length > 0 || kansenGesprek.length > 0) && (
           <div className="rounded-xl bg-sky-950/60 border border-sky-600/40 p-5">
             <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
               <Lightbulb className="w-5 h-5" />
-              Andere aanknopingspunten
+              Aanknopingspunten
             </h3>
             <div className="space-y-3">
-              {sortedAanknopingspunten.map((punt: any, idx: number) => (
-                <div key={idx} className="rounded-lg bg-sky-900/40 border border-sky-700/40 p-4">
-                  <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
-                    <h4 className="font-semibold text-white flex-1">{punt.punt}</h4>
-                    {getUrgentieBadge(punt.urgentie)}
-                  </div>
-                  <p className="text-sm text-sky-100 mb-2">
-                    <strong>Gevolg:</strong> {punt.gevolg}
-                  </p>
-                  <p className="text-sm text-sky-50">
-                    <strong>Actie:</strong> {punt.actie}
-                  </p>
+              {sortedAanknopingspunten.length > 0
+                ? sortedAanknopingspunten.map((punt: any, idx: number) => (
+                    <div key={idx} className="rounded-lg bg-sky-900/40 border border-sky-700/40 p-4">
+                      <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
+                        <h4 className="font-semibold text-white flex-1">{punt.punt || punt}</h4>
+                        {punt.urgentie ? getUrgentieBadge(punt.urgentie) : null}
+                      </div>
+                      {punt.gevolg && (
+                        <p className="text-sm text-sky-100 mb-2">
+                          <strong>Gevolg:</strong> {punt.gevolg}
+                        </p>
+                      )}
+                      {punt.actie && (
+                        <p className="text-sm text-sky-50">
+                          <strong>Actie:</strong> {punt.actie}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                : kansenGesprek.map((punt, idx) => (
+                    <div key={idx} className="rounded-lg bg-sky-900/40 border border-sky-700/40 p-4">
+                      <p className="text-white">{punt}</p>
+                    </div>
+                  ))}
+            </div>
+          </div>
+        )}
+
+        {gesprek.agenda && gesprek.agenda.length > 0 && (
+          <div className="rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-5">
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Agenda
+            </h3>
+            <div className="space-y-2">
+              {gesprek.agenda.map((item: any, idx: number) => (
+                <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-emerald-800/40 border border-emerald-600/40">
+                  <span className="text-white">{item.punt}</span>
+                  <span className="text-emerald-300 font-semibold text-sm">{item.minuten} min</span>
                 </div>
               ))}
             </div>
           </div>
         )}
+
+        {gesprek.aannames && gesprek.aannames.length > 0 && (
+          <div className="rounded-xl bg-amber-950/60 border border-amber-600/40 p-5">
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Aannames
+            </h3>
+            <div className="space-y-3">
+              {gesprek.aannames.map((item: any, idx: number) => (
+                <div key={idx} className="rounded-lg bg-amber-900/40 border border-amber-700/40 p-4 space-y-2">
+                  <p className="text-white font-semibold">{item.aanname}</p>
+                  {item.onderbouwing && (
+                    <p className="text-sm text-amber-100">
+                      <strong>Onderbouwing:</strong> {item.onderbouwing}
+                    </p>
+                  )}
+                  {item.te_verifieren_vraag && (
+                    <p className="text-sm text-amber-50">
+                      <strong>Te verifiëren:</strong> {item.te_verifieren_vraag}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {gesprek.vragen && Object.keys(gesprek.vragen).some((k) => gesprek.vragen[k]?.length) && (
+          <div className="rounded-xl bg-violet-950/60 border border-violet-600/40 p-5">
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Vragen
+            </h3>
+            <div className="space-y-4">
+              {Object.entries(gesprek.vragen).map(([category, questions]: [string, any]) => {
+                if (!questions || !Array.isArray(questions) || questions.length === 0) return null;
+                return (
+                  <div key={category}>
+                    <h4 className="text-md font-semibold text-violet-200 mb-2">
+                      {VRAAG_CATEGORIES[category] || category}
+                    </h4>
+                    <ul className="space-y-1">
+                      {questions.map((q: string, idx: number) => (
+                        <li key={idx} className="text-sm text-violet-50 pl-4 before:content-['•'] before:mr-2">
+                          {q}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <SectionMetadataBadge section="gesprek" metadata={sectionMetadata.gesprek} />
       </div>
     </section>
   );
