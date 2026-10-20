@@ -36,7 +36,8 @@ export async function GET() {
       }
 
       if (data?.value) {
-        const settings = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        // Supabase returns JSONB as object, no parsing needed
+        const settings = data.value;
         return NextResponse.json({ ...DEFAULT_SETTINGS, ...settings });
       }
     } else {
@@ -89,12 +90,15 @@ export async function POST(request: NextRequest) {
     const db = getDb();
 
     if (isUsingSupabase()) {
+      // Upsert with JSONB value (Supabase auto-handles JSONB conversion)
       const { error } = await db
         .from('settings')
         .upsert({
           key: 'huisstijl',
-          value: settings,
+          value: settings, // Will be stored as JSONB
           updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'key'
         });
 
       if (error) throw error;

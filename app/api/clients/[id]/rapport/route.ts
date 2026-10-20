@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUsingSupabase, getDb } from '@/lib/db';
-import { generateWordReport, generatePowerPointReport } from '@/lib/report-generator';
+import { generateWordReport, generatePowerPointReport, generatePDFReport } from '@/lib/report-generator';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -79,8 +79,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       buffer = await generatePowerPointReport({ client, dossier, huisstijl });
       filename = `MVO-dossier-${client.naam?.replace(/[^a-z0-9]/gi, '-') || 'prospect'}-${Date.now()}.pptx`;
       contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    } else if (format === 'pdf') {
+      buffer = await generatePDFReport({ client, dossier, huisstijl });
+      filename = `MVO-dossier-${client.naam?.replace(/[^a-z0-9]/gi, '-') || 'prospect'}-${Date.now()}.pdf`;
+      contentType = 'application/pdf';
     } else {
-      return NextResponse.json({ error: 'PDF export nog niet geïmplementeerd' }, { status: 501 });
+      return NextResponse.json({ error: 'Ongeldig formaat' }, { status: 400 });
     }
 
     return new NextResponse(Buffer.from(buffer), {

@@ -13,6 +13,7 @@ import { ProspectActions } from './actions';
 import { MvoRegisterCard } from './mvo-register-card';
 import { LinkedInCard } from './linkedin-card';
 import { KlanteisenSection } from './klanteisen-section';
+import { GesprekSection, NextStepsCard } from './gesprek-section';
 import { VersionHistory } from './version-history';
 import { SectionWrapper } from './section-wrapper';
 
@@ -182,6 +183,12 @@ export function ProspectView({ client }: { client: any }) {
 
         {/* KLANTEISEN - merged with aanknopingspunten */}
         <KlanteisenSection clientId={client.id} dossier={dossier} />
+
+        {/* GESPREK - aanknopingspunten details */}
+        <GesprekSection clientId={client.id} gesprek={onderzoek?.gesprek} sectionMetadata={sectionMetadata} />
+
+        {/* NEXT STEPS */}
+        <NextStepsCard clientId={client.id} nextSteps={onderzoek?.gesprek?.next_steps} />
 
         {/* PROFIEL */}
         <SectionWrapper clientId={client.id} section="profiel" sectionMetadata={sectionMetadata} refreshLabel="Profiel">
