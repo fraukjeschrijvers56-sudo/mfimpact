@@ -16,7 +16,7 @@ export const claimCheckRules: ClaimCheckRule[] = [
     pattern: /\b(CO2[\s-]?neutraal|koolstofneutraal|carbon neutral)\b/i,
     risk: 'CO₂-neutraliteit via compensatie alleen is onvoldoende onderbouwd',
     severity: 'high',
-    suggestion: 'Toon eerst emissiereductie-inspanningen; compensatie alleen volstaat niet volgens Green Claims Directive concept'
+    suggestion: 'Toon eerst emissiereductie-inspanningen; compensatie alleen volstaat niet volgens ECGT (Richtlijn 2024/825 / BW 6:193g)'
   },
   {
     pattern: /\b(100%\s*)(groen|duurzaam|milieuvriendelijk)\b/i,

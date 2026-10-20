@@ -4,9 +4,10 @@
  * Status decisions live in lib/legislation-status.ts (pure, dossier-based).
  * This file keeps the historical per-law helpers and a compatibility wrapper.
  */
-import { assessLegislation } from './legislation-status';
+import { assessLegislation } from './legislation-status.ts';
+import { WETGEVING_PEILDATUM, WETGEVING_THRESHOLDS as T } from './wetgeving-bronnen.ts';
 
-export const ESG_REFERENCE_DATE = '2026-10-16';
+export const ESG_REFERENCE_DATE = WETGEVING_PEILDATUM;
 export const ESG_DISCLAIMER = 'Indicatief, geen juridisch advies';
 
 export interface ThresholdResult {
@@ -45,7 +46,7 @@ export function checkCSRD(data: CompanyData): ThresholdResult {
     };
   }
 
-  const meetsThreshold = fte > 1000 && omzet > 450_000_000;
+  const meetsThreshold = fte > T.CSRD_FTE && omzet > T.CSRD_OMZET;
   
   return {
     applicable: meetsThreshold,
@@ -73,7 +74,7 @@ export function checkValueChainCap(data: CompanyData): ThresholdResult {
     };
   }
 
-  const eligible = fte <= 1000;
+  const eligible = fte <= T.VALUE_CHAIN_FTE;
   
   return {
     applicable: eligible,
@@ -87,7 +88,7 @@ export function checkValueChainCap(data: CompanyData): ThresholdResult {
 }
 
 /**
- * CSDDD (na Omnibus): >5000 medewerkers EN >€1,5 mrd omzet; toepassing vanaf 2029
+ * CSDDD (na Omnibus): >5000 medewerkers EN >€1,5 mrd omzet; toepassing vanaf 26-07-2029
  */
 export function checkCSDDD(data: CompanyData): ThresholdResult {
   const fte = typeof data.aantal_medewerkers === 'number' ? data.aantal_medewerkers : null;
@@ -102,7 +103,7 @@ export function checkCSDDD(data: CompanyData): ThresholdResult {
     };
   }
 
-  const meetsThreshold = fte > 5000 && omzet > 1_500_000_000;
+  const meetsThreshold = fte > T.CSDDD_FTE && omzet > T.CSDDD_OMZET;
   
   return {
     applicable: meetsThreshold,
@@ -112,7 +113,7 @@ export function checkCSDDD(data: CompanyData): ThresholdResult {
       ? [`>5000 FTE (${fte}) EN omzet >€1,5 mrd (€${(omzet / 1_000_000_000).toFixed(1)} mrd)`]
       : [`Niet direct verplicht: ${fte} FTE en €${(omzet / 1_000_000).toFixed(0)} mln omzet`],
     notes: meetsThreshold 
-      ? ['Toepassing vanaf 2029']
+      ? ['Toepassing vanaf 26-07-2029']
       : ['MKB alleen indirect als leverancier van grote bedrijven']
   };
 }
@@ -147,7 +148,7 @@ export function checkEUDR(data: CompanyData): ThresholdResult {
     reasons: hasEUDRProducts 
       ? [`Verhandelt EUDR-producten: ${products.filter(p => eudrProducts.some(ep => p.includes(ep))).join(', ')}`]
       : ['Geen EUDR-producten geïdentificeerd'],
-    notes: hasEUDRProducts ? ['MKB later dan grote bedrijven'] : []
+    notes: hasEUDRProducts ? ['Van toepassing 30-12-2026; micro en klein 30-06-2027'] : []
   };
 }
 
@@ -163,7 +164,7 @@ export function checkCBAM(data: CompanyData): ThresholdResult {
   );
   
   const volume = data.import_volume_ton;
-  const exempt = volume !== undefined && volume < 50;
+  const exempt = volume !== undefined && volume < T.CBAM_TON;
   
   return {
     applicable: hasCBAMProducts && !exempt,
@@ -194,9 +195,9 @@ export function checkNLEnergySaving(data: CompanyData): ThresholdResult {
     };
   }
   
-  const meetsElectricity = !!(kwh && kwh >= 50_000);
-  const meetsGas = !!(m3 && m3 >= 25_000);
-  const meetsEED = !!(kwh && kwh >= 10_000_000) || !!(m3 && m3 >= 170_000);
+  const meetsElectricity = !!(kwh && kwh >= T.ENERGY_KWH);
+  const meetsGas = !!(m3 && m3 >= T.ENERGY_M3);
+  const meetsEED = !!(kwh && kwh >= T.ENERGY_ONDERZOEK_KWH) || !!(m3 && m3 >= T.ENERGY_ONDERZOEK_M3);
   
   const applicable = meetsElectricity || meetsGas;
   
@@ -251,9 +252,9 @@ export function checkMKBCategory(data: CompanyData): {
     return { category: 'onbekend', reason: 'FTE onbekend' };
   }
   
-  // Micro: <10 FTE en ≤€2 mln
-  if (fte < 10 && (omzet === null || omzet <= 2_000_000)) {
-    return { category: 'micro', reason: `<10 FTE (${fte})${omzet ? ` en ≤€2 mln omzet` : ''}` };
+  // Micro (jaarrekening 2013/34 art. 3 na Gedelegeerde Richtlijn 2023/2775): <10 FTE, ≤€450k balans, ≤€900k omzet
+  if (fte < T.MICRO_FTE && (omzet === null || omzet <= T.MICRO_OMZET) && (balans === null || balans <= T.MICRO_BALANS)) {
+    return { category: 'micro', reason: `<${T.MICRO_FTE} FTE (${fte})${omzet ? ` en ≤€900k omzet` : ''}` };
   }
   
   // Klein: <50 FTE en ≤€10 mln

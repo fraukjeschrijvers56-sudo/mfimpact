@@ -2,8 +2,13 @@
  * Deterministic wetgeving & drempel status from stored dossier data.
  * Never uses an LLM. Missing/uncertain inputs → TE ONDERZOEKEN, never NVT.
  */
-export const ESG_REFERENCE_DATE = '2026-10-16';
+import { getLegalSourceDisplay, WETGEVING_PEILDATUM, WETGEVING_THRESHOLDS } from './wetgeving-bronnen.ts';
+import type { LegalSourceDisplay } from './wetgeving-types.ts';
+
+export const ESG_REFERENCE_DATE = WETGEVING_PEILDATUM;
 export const ESG_DISCLAIMER = 'Indicatief, geen juridisch advies';
+
+const T = WETGEVING_THRESHOLDS;
 
 export type LegislationStatus =
   | 'van_toepassing'
@@ -40,6 +45,7 @@ export interface LegislationItem {
   question?: string;
   documentRequest?: string;
   notes?: string[];
+  legal?: LegalSourceDisplay;
 }
 
 export interface LegislationAssessment {
@@ -439,10 +445,14 @@ function assessAndThreshold(opts: {
 
 function mkbCategory(facts: LegislationFacts): { category: string; reason: string } {
   if (facts.fte == null) return { category: 'onbekend', reason: 'FTE onbekend' };
-  if (facts.fte < 10) return { category: 'micro', reason: `<10 FTE (${facts.fte})` };
-  if (facts.fte < 50) return { category: 'klein', reason: `<50 FTE (${facts.fte})` };
-  if (facts.fte < 250) return { category: 'middelgroot', reason: `<250 FTE (${facts.fte})` };
-  return { category: 'groot', reason: `≥250 FTE (${facts.fte})` };
+  const omzetOverMicro = facts.omzet != null && facts.omzet > T.MICRO_OMZET;
+  const balansOverMicro = facts.balanstotaal != null && facts.balanstotaal > T.MICRO_BALANS;
+  if (facts.fte < T.MICRO_FTE && !(omzetOverMicro && balansOverMicro)) {
+    return { category: 'micro', reason: `<${T.MICRO_FTE} FTE (${facts.fte}); jaarrekening micro ≤€450k balans / ≤€900k omzet` };
+  }
+  if (facts.fte < T.KLEIN_FTE) return { category: 'klein', reason: `<${T.KLEIN_FTE} FTE (${facts.fte})` };
+  if (facts.fte < T.MIDDEL_FTE) return { category: 'middelgroot', reason: `<${T.MIDDEL_FTE} FTE (${facts.fte})` };
+  return { category: 'groot', reason: `≥${T.MIDDEL_FTE} FTE (${facts.fte})` };
 }
 
 export function summarizeLegislation(items: LegislationItem[]): string {
@@ -479,46 +489,54 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
     category: 'CSRD',
     a: facts.fteHard ? facts.fte : null,
     b: facts.omzetHard ? facts.omzet : null,
-    aMin: 1000,
-    bMin: 450_000_000,
+    aMin: T.CSRD_FTE,
+    bMin: T.CSRD_OMZET,
     aLabel: 'FTE',
     bLabel: 'netto-omzet',
     aSource: facts.fteHard ? facts.fteSource : undefined,
     bSource: facts.omzetHard ? facts.omzetSource : undefined,
-    notes: ['Na Omnibus I: >1000 FTE én netto-omzet >€450 mln. Beursgenoteerd MKB valt niet meer onder CSRD.'],
+    notes: [
+      'Na Omnibus I (EU) 2026/470, in werking 18-03-2026: >1000 werknemers én >€450 mln omzet (2013/34 art. 19 bis / 29 bis). NL-implementatiewet 36 678 nog in behandeling.',
+    ],
   });
   items.push(csrd);
 
+  const valueChainNotes = [
+    '2013/34 art. 19 bis lid 3 + Gedelegeerde Verordening (EU) 2026/1560 (VSME); beschermd ≤1000 werknemers; plafond vanaf boekjaar 2027.',
+  ];
   if (facts.fte == null) {
     items.push(
       item('value_chain_cap', 'Value-chain cap', 'te_onderzoeken', ['FTE onbekend'], {
-        needed: 'Nodig: aantal FTE (KvK / jaarrekening) om te bepalen of de value-chain cap (≤1000 FTE) geldt.',
-        question: 'Nodig: aantal FTE (KvK / jaarrekening) om te bepalen of de value-chain cap (≤1000 FTE) geldt.',
+        needed: `Nodig: aantal FTE (KvK / jaarrekening) om te bepalen of de value-chain cap (≤${T.VALUE_CHAIN_FTE} FTE) geldt.`,
+        question: `Nodig: aantal FTE (KvK / jaarrekening) om te bepalen of de value-chain cap (≤${T.VALUE_CHAIN_FTE} FTE) geldt.`,
         documentRequest: 'KvK-uittreksel of jaarrekening met aantal medewerkers (FTE)',
+        notes: valueChainNotes,
       })
     );
-  } else if (facts.fte <= 1000) {
+  } else if (facts.fte <= T.VALUE_CHAIN_FTE) {
     items.push(
       item(
         'value_chain_cap',
         'Value-chain cap',
         'vrijwillig',
-        [`≤1000 FTE (${facts.fte}): hoeft grote klanten niet meer te leveren dan de VSME-standaard`],
-        { source: facts.fteSource, notes: ['Verkoopargument: VSME-rapportage is voldoende voor grote afnemers.'] }
+        [`≤${T.VALUE_CHAIN_FTE} FTE (${facts.fte}): hoeft grote klanten niet meer te leveren dan de VSME-standaard`],
+        { source: facts.fteSource, notes: [...valueChainNotes, 'Verkoopargument: VSME-rapportage is voldoende voor grote afnemers.'] }
       )
     );
   } else if (facts.fteHard) {
     items.push(
-      item('value_chain_cap', 'Value-chain cap', 'niet_van_toepassing', [`>1000 FTE (${facts.fte}): value-chain cap niet van toepassing`], {
+      item('value_chain_cap', 'Value-chain cap', 'niet_van_toepassing', [`>${T.VALUE_CHAIN_FTE} FTE (${facts.fte}): value-chain cap niet van toepassing`], {
         source: facts.fteSource,
+        notes: valueChainNotes,
       })
     );
   } else {
     items.push(
-      item('value_chain_cap', 'Value-chain cap', 'te_onderzoeken', ['FTE >1000 is niet uit KvK/jaarrekening bevestigd'], {
+      item('value_chain_cap', 'Value-chain cap', 'te_onderzoeken', [`FTE >${T.VALUE_CHAIN_FTE} is niet uit KvK/jaarrekening bevestigd`], {
         needed: FTE_OMZET_NEEDED,
         question: FTE_OMZET_NEEDED,
         documentRequest: 'KvK-uittreksel of jaarrekening met aantal medewerkers (FTE)',
+        notes: valueChainNotes,
       })
     );
   }
@@ -528,13 +546,13 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
     category: 'CSDDD',
     a: facts.fteHard ? facts.fte : null,
     b: facts.omzetHard ? facts.omzet : null,
-    aMin: 5000,
-    bMin: 1_500_000_000,
+    aMin: T.CSDDD_FTE,
+    bMin: T.CSDDD_OMZET,
     aLabel: 'FTE',
     bLabel: 'netto-omzet',
     aSource: facts.fteHard ? facts.fteSource : undefined,
     bSource: facts.omzetHard ? facts.omzetSource : undefined,
-    notes: ['Na Omnibus: >5000 FTE én >€1,5 mrd omzet; toepassing vanaf 2029.'],
+    notes: [`Na Omnibus I: >${T.CSDDD_FTE} werknemers én >€1,5 mrd omzet; toepassing vanaf ${T.CSDDD_APPLIES_LABEL}.`],
   });
   if (csdddLegal.status === 'niet_van_toepassing' && clients.largePrivate) {
     items.push(
@@ -551,30 +569,33 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
     ...csrd,
     id: 'eu_taxonomie',
     category: 'EU Taxonomie',
-    notes: ['Volgt CSRD-scope'],
+    notes: ['Volgt CSRD-scope (Taxonomieverordening art. 8 → 2013/34 art. 19 bis / 29 bis).'],
     needed: csrd.status === 'te_onderzoeken' ? csrd.needed : undefined,
     question: csrd.status === 'te_onderzoeken' ? csrd.question : undefined,
     documentRequest: csrd.status === 'te_onderzoeken' ? csrd.documentRequest : undefined,
+    legal: undefined,
   });
 
   const eudrHits = goodsHit(facts.products, EUDR_GOODS);
   const eudrDoc = 'Product-/inkooplijst met EUDR-goederen (hout, papier, soja, palmolie, rubber, cacao, koffie, rundvee) of producten daarvan';
+  const eudrNotes = ['Van toepassing 30-12-2026; micro- en kleine ondernemingen 30-06-2027.'];
   if (facts.eudrSignal === 'yes' || eudrHits.length > 0) {
     items.push(
       item('eudr', 'EUDR', 'van_toepassing', [
         eudrHits.length ? `EUDR-goederen: ${eudrHits.join(', ')}` : 'Ketenrisico-signaal: wel EUDR-goederen',
-      ], { source: facts.eudrSource || facts.productsSource })
+      ], { source: facts.eudrSource || facts.productsSource, notes: eudrNotes })
     );
   } else if (isPureServiceSbi(facts.sbiCodes)) {
     items.push(
       item('eudr', 'EUDR', 'niet_van_toepassing', [
         `SBI ${facts.sbiCodes.join(' / ')} is een dienstensector, geen EUDR-goederen`,
-      ], { source: facts.sbiSource })
+      ], { source: facts.sbiSource, notes: eudrNotes })
     );
   } else if (facts.eudrSignal === 'no' && facts.eudrSource && HARD_SOURCE_RE.test(facts.eudrSource)) {
     items.push(
       item('eudr', 'EUDR', 'niet_van_toepassing', ['Sector/producten vallen buiten EUDR-goederen'], {
         source: facts.eudrSource,
+        notes: eudrNotes,
       })
     );
   } else {
@@ -586,29 +607,35 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
         needed: EUDR_NEEDED,
         question: EUDR_NEEDED,
         documentRequest: eudrDoc,
+        notes: eudrNotes,
       })
     );
   }
 
   const cbamHits = goodsHit(facts.products, CBAM_GOODS);
   const cbamNeeded =
-    'Nodig: worden CBAM-goederen (staal, aluminium, cement, kunstmest, waterstof, elektriciteit) buiten de EU ingekocht en is dat meer dan 50 ton per jaar?';
-  if ((facts.cbamSignal === 'yes' || cbamHits.length > 0) && !(facts.importTon != null && facts.importTon < 50)) {
+    `Nodig: worden CBAM-goederen (staal, aluminium, cement, kunstmest, waterstof, elektriciteit) buiten de EU ingekocht en is dat meer dan ${T.CBAM_TON} ton per jaar?`;
+  const cbamNotes = [
+    `${T.CBAM_TON} ton nettomassa per jaar (art. 2 bis + bijlage VII); eerste jaarlijkse aangifte 30-09-2027.`,
+  ];
+  if ((facts.cbamSignal === 'yes' || cbamHits.length > 0) && !(facts.importTon != null && facts.importTon < T.CBAM_TON)) {
     items.push(
       item('cbam', 'CBAM', 'van_toepassing', [
         cbamHits.length ? `CBAM-goederen: ${cbamHits.join(', ')}` : 'Import van CBAM-goederen vastgesteld',
-      ], { source: facts.cbamSource || facts.productsSource })
+      ], { source: facts.cbamSource || facts.productsSource, notes: cbamNotes })
     );
-  } else if (facts.importTon != null && facts.importTon < 50 && (facts.cbamSignal === 'yes' || cbamHits.length > 0)) {
+  } else if (facts.importTon != null && facts.importTon < T.CBAM_TON && (facts.cbamSignal === 'yes' || cbamHits.length > 0)) {
     items.push(
-      item('cbam', 'CBAM', 'niet_van_toepassing', [`Import CBAM-goederen <50 ton/jaar (${facts.importTon} t)`], {
+      item('cbam', 'CBAM', 'niet_van_toepassing', [`Import CBAM-goederen <${T.CBAM_TON} ton/jaar (${facts.importTon} t)`], {
         source: facts.cbamSource,
+        notes: cbamNotes,
       })
     );
   } else if (facts.cbamSignal === 'no' && facts.cbamSource) {
     items.push(
       item('cbam', 'CBAM', 'niet_van_toepassing', ['Aangetoond dat er geen CBAM-goederen buiten de EU worden ingekocht'], {
         source: facts.cbamSource,
+        notes: cbamNotes,
       })
     );
   } else {
@@ -618,6 +645,7 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
         question: cbamNeeded,
         documentRequest:
           'Inkoopoverzicht CBAM-goederen (staal, aluminium, cement, kunstmest, waterstof, elektriciteit) van buiten de EU, met tonnage per jaar',
+        notes: cbamNotes,
       })
     );
   }
@@ -625,17 +653,20 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
   const kwh = facts.energyKwh;
   const m3 = facts.gasM3;
   const energyNeeded = 'Nodig: energieverbruik elektriciteit (kWh) en gas (m³) per vestiging';
-  if ((kwh != null && kwh >= 50_000) || (m3 != null && m3 >= 25_000)) {
+  const energyNotes = [
+    'Bal art. 5.15 (≥50.000 kWh of ≥25.000 m³), informatieplicht art. 5.15a (volgende ronde 1-12-2027), onderzoeksplicht art. 5.15b.',
+  ];
+  if ((kwh != null && kwh >= T.ENERGY_KWH) || (m3 != null && m3 >= T.ENERGY_M3)) {
     const reasons = [
-      kwh != null && kwh >= 50_000 ? `≥50.000 kWh (${kwh.toLocaleString('nl-NL')} kWh)` : null,
-      m3 != null && m3 >= 25_000 ? `≥25.000 m³ (${m3.toLocaleString('nl-NL')} m³)` : null,
+      kwh != null && kwh >= T.ENERGY_KWH ? `≥50.000 kWh (${kwh.toLocaleString('nl-NL')} kWh)` : null,
+      m3 != null && m3 >= T.ENERGY_M3 ? `≥25.000 m³ (${m3.toLocaleString('nl-NL')} m³)` : null,
     ].filter(Boolean) as string[];
-    items.push(item('energiebesparingsplicht', 'Energiebesparingsplicht', 'van_toepassing', reasons));
-  } else if (kwh != null && m3 != null && kwh < 50_000 && m3 < 25_000) {
+    items.push(item('energiebesparingsplicht', 'Energiebesparingsplicht', 'van_toepassing', reasons, { notes: energyNotes }));
+  } else if (kwh != null && m3 != null && kwh < T.ENERGY_KWH && m3 < T.ENERGY_M3) {
     items.push(
       item('energiebesparingsplicht', 'Energiebesparingsplicht', 'niet_van_toepassing', [
         `Onder drempel: ${kwh.toLocaleString('nl-NL')} kWh en ${m3.toLocaleString('nl-NL')} m³`,
-      ])
+      ], { notes: energyNotes })
     );
   } else {
     items.push(
@@ -643,6 +674,7 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
         needed: energyNeeded,
         question: energyNeeded,
         documentRequest: 'Energierekeningen per vestiging: elektriciteit (kWh) en gas (m³) over het laatste kalenderjaar',
+        notes: energyNotes,
       })
     );
   }
@@ -659,7 +691,7 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
         `Gunningsvoordeel bij ${why} (geen wettelijke plicht)`,
       ], {
         source: clients.evidence[0],
-        notes: ['Geen wet, wel gunningsvoordeel bij Rijk, ProRail en veel gemeenten.'],
+        notes: ['Norm, geen wet. Gunningsvoordeel bij Rijk, ProRail en veel gemeenten.'],
       })
     );
   } else {
@@ -682,6 +714,7 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
       row.label = LEGISLATION_STATUS_LABEL.te_onderzoeken;
       row.color = LEGISLATION_STATUS_COLOR.te_onderzoeken;
     }
+    row.legal = getLegalSourceDisplay(row.id);
   }
 
   const counts = {

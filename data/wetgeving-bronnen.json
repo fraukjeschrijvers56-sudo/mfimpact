@@ -1,0 +1,563 @@
+[
+  {
+    "key": "csrd",
+    "label": "CSRD",
+    "titel": "Richtlijn (EU) 2022/2464 betreffende duurzaamheidsrapportering door ondernemingen (CSRD); de verplichtingen staan in Richtlijn 2013/34/EU (Jaarrekeningrichtlijn), zoals gewijzigd",
+    "nummer": "Richtlijn (EU) 2022/2464",
+    "celex_of_bwb": "CELEX 32022L2464 (geconsolideerde 2013/34/EU: 02013L0034-20260318)",
+    "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32022L2464",
+    "url_artikel": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:02013L0034-20260318#art_19a",
+    "artikelen": [
+      {
+        "artikel": "Richtlijn 2013/34/EU art. 19 bis, lid 1 (geconsolideerd 18-03-2026)",
+        "onderwerp": "Drempel/toepassingsgebied + verplichting duurzaamheidsrapport in bestuursverslag",
+        "citaat": "Ondernemingen die op hun balansdatum een netto-omzet van 450 000 000 EUR en een gemiddeld aantal van 1 000 werknemers over het boekjaar overschrijden, nemen in hun bestuursverslag informatie op die nodig is om inzicht te krijgen in de effecten van de onderneming op duurzaamheidskwesties"
+      },
+      {
+        "artikel": "Richtlijn 2013/34/EU art. 29 bis, lid 1",
+        "onderwerp": "Groepsniveau (geconsolideerd)",
+        "citaat": "Moederondernemingen van een groep die op haar balansdatum, op geconsolideerde basis, een netto-omzet van 450 000 000 EUR en een gemiddeld aantal van 1 000 werknemers over het boekjaar overschrijdt"
+      },
+      {
+        "artikel": "Richtlijn 2013/34/EU art. 19 bis, lid 3",
+        "onderwerp": "Waardeketenplafond (zie item value_chain_cap)",
+        "citaat": "Beschermde ondernemingen hebben het recht om [...] te weigeren informatie te verstrekken die verder gaat dan de informatie die is gespecificeerd in de vrijwillige standaarden."
+      },
+      {
+        "artikel": "Richtlijn (EU) 2022/2464 art. 5, lid 2 (gewijzigd door 2025/794 en 2026/470)",
+        "onderwerp": "Toepassingsdata",
+        "citaat": "voor boekjaren die op of na 1 januari 2027 beginnen: [...] op ondernemingen die op hun balansdatum een netto-omzet van 450 000 000 EUR en een gemiddeld aantal van 1 000 werknemers over het boekjaar overschrijden"
+      }
+    ],
+    "wijzigingen": [
+      {
+        "titel": "Richtlijn (EU) 2026/470 (Omnibus I) tot wijziging van Richtlijnen 2006/43/EG, 2013/34/EU, (EU) 2022/2464 en (EU) 2024/1760",
+        "nummer": "(EU) 2026/470 – CELEX 32026L0470 – PB L 2026/470 van 26-02-2026, in werking 18-03-2026",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32026L0470",
+        "effect": "Drempel CSRD naar >1 000 werknemers EN >EUR 450 mln netto-omzet (art. 19 bis/29 bis 2013/34/EU); waardeketenplafond; sectorstandaarden vrijwillig. Omzetting door lidstaten uiterlijk 19-03-2027 (art. 5 Richtlijn 2026/470)."
+      },
+      {
+        "titel": "Richtlijn (EU) 2025/794 ('stop-the-clock')",
+        "nummer": "(EU) 2025/794 – CELEX 32025L0794",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32025L0794",
+        "effect": "Uitstel 'tweede golf': toepassing voor boekjaren vanaf 1-1-2027 (art. 5 lid 2 punt b CSRD); punt c vanaf 1-1-2028."
+      },
+      {
+        "titel": "Wet implementatie richtlijn duurzaamheidsrapportering (NL, Kamerstuk 36 678)",
+        "nummer": "Wetsvoorstel 36 678",
+        "url": "https://www.eerstekamer.nl/wetsvoorstel/36678_wet_implementatie_richtlijn",
+        "effect": "NL-omzetting (wijzigt o.a. BW Boek 2). Peildatum 20-10-2026: nog in behandeling bij de Tweede Kamer; nog geen Staatsblad."
+      }
+    ],
+    "toelichting_url": "https://www.rvo.nl/onderwerpen/csrd",
+    "status_wet": "wet",
+    "geverifieerd": true,
+    "opmerking": "Drempels en artikelnummers geverifieerd in de NL geconsolideerde tekst van 2013/34/EU (18-03-2026) en in Richtlijn 2026/470. Let op: in de NL-taalversie heet art. 19a 'artikel 19 bis'; het EUR-Lex-anker is #art_19a. NL-omzetting nog niet afgerond, dus in NL geldt formeel nog het oude BW-regime tot de implementatiewet in werking treedt."
+  },
+  {
+    "key": "value_chain_cap",
+    "label": "Value-chain cap (VSME)",
+    "titel": "Waardeketenplafond: art. 19 bis lid 3 en art. 29 bis lid 3 Richtlijn 2013/34/EU (ingevoegd door Omnibus I) + Gedelegeerde Verordening (EU) 2026/1560 (vrijwillige standaard / plafond)",
+    "nummer": "Richtlijn 2013/34/EU art. 19 bis lid 3 (via (EU) 2026/470); Gedelegeerde Verordening (EU) 2026/1560",
+    "celex_of_bwb": "CELEX 02013L0034-20260318; CELEX 32026R1560",
+    "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32026R1560",
+    "url_artikel": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:02013L0034-20260318#art_19a",
+    "artikelen": [
+      {
+        "artikel": "Richtlijn 2013/34/EU art. 19 bis, lid 3, punt b",
+        "onderwerp": "Wie is beschermd (drempel)",
+        "citaat": "“beschermde onderneming”: een onderneming die: i) op haar balansdatum een gemiddeld aantal van 1 000 werknemers over het voorgaande boekjaar niet overschrijdt, en ii) deel uitmaakt van de waardeketen van een rapporterende onderneming"
+      },
+      {
+        "artikel": "Richtlijn 2013/34/EU art. 19 bis, lid 3 (vervolg)",
+        "onderwerp": "Weigerrecht + contractuele bepalingen",
+        "citaat": "verlangen rapporterende ondernemingen [...] niet van beschermde ondernemingen dat zij informatie verstrekken die verder gaat dan de informatie die is gespecificeerd in de vrijwillige standaarden"
+      },
+      {
+        "artikel": "Richtlijn 2013/34/EU art. 29 quater bis (anker #art_29ca)",
+        "onderwerp": "Grondslag vrijwillige standaard",
+        "citaat": "krijgt de Commissie de bevoegdheid om [...] uiterlijk op 19 juli 2026 duurzaamheidsrapporteringsstandaarden voor vrijwillig gebruik vast te stellen"
+      },
+      {
+        "artikel": "Gedelegeerde Verordening (EU) 2026/1560 art. 3 + bijlage II (anker #art_3, #anx_II)",
+        "onderwerp": "Inhoud van het plafond",
+        "citaat": "In het waardeketenplatfond zijn alleen de datapunten uit bijlage II van deze verordening vervat."
+      },
+      {
+        "artikel": "Gedelegeerde Verordening (EU) 2026/1560 art. 4",
+        "onderwerp": "Toepassing",
+        "citaat": "Artikel 3 is van toepassing vanaf de boekjaren die op of na 1 januari 2027 aanvangen."
+      }
+    ],
+    "wijzigingen": [
+      {
+        "titel": "Richtlijn (EU) 2026/470 (Omnibus I) tot wijziging van Richtlijnen 2006/43/EG, 2013/34/EU, (EU) 2022/2464 en (EU) 2024/1760",
+        "nummer": "(EU) 2026/470 – CELEX 32026L0470 – PB L 2026/470 van 26-02-2026, in werking 18-03-2026",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32026L0470",
+        "effect": "Voegt het waardeketenplafond in (art. 19 bis lid 3, 29 bis lid 3, 29 quater bis 2013/34/EU)."
+      },
+      {
+        "titel": "Gedelegeerde Verordening (EU) 2026/1560 van 3 juli 2026 (vrijwillige standaard voor ondernemingen beschermd door het waardeketenplafond)",
+        "nummer": "(EU) 2026/1560 – CELEX 32026R1560 – PB L 2026/1560 van 21-09-2026",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32026R1560",
+        "effect": "Legt de vrijwillige standaard (bijlage I, modules B1–B11 / C) en het plafond (bijlage II-datapunten) vast; plafond geldt vanaf boekjaar 2027."
+      }
+    ],
+    "toelichting_url": "https://finance.ec.europa.eu/regulation-and-supervision/financial-services-legislation/implementing-and-delegated-acts/corporate-sustainability-reporting-directive_en",
+    "status_wet": "wet",
+    "geverifieerd": true,
+    "opmerking": "Geverifieerd in NL-teksten. Waarde voor MKB: klanten die zelf CSRD-plichtig zijn mogen een MKB-leverancier (≤1 000 werknemers) niet méér vragen dan de bijlage II-datapunten. Dit geldt NIET voor vragen die niet 'met het oog op duurzaamheidsrapportering' zijn (bijv. eigen inkoopbeleid, EcoVadis, aanbestedingseisen)."
+  },
+  {
+    "key": "vsme",
+    "label": "VSME (vrijwillige MKB-standaard, B1–B11)",
+    "titel": "Aanbeveling (EU) 2025/1710 van de Commissie van 30 juli 2025 inzake een vrijwillige duurzaamheidsrapportagestandaard voor kleine en middelgrote ondernemingen (VSME)",
+    "nummer": "Aanbeveling (EU) 2025/1710 (C/2025/4984)",
+    "celex_of_bwb": "CELEX 32025H1710",
+    "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32025H1710",
+    "url_artikel": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32025H1710#anx_I",
+    "artikelen": [
+      {
+        "artikel": "Aanbeveling punt 1 + bijlage I",
+        "onderwerp": "Aanbeveling aan niet-beursgenoteerde MKB",
+        "citaat": "De Commissie beveelt aan dat niet-beursgenoteerde kmo’s en micro-ondernemingen die vrijwillig duurzaamheidsinformatie willen rapporteren, dit doen in overeenstemming met de in bijlage I opgenomen vrijwillige duurzaamheidsrapporteringsstandaard."
+      },
+      {
+        "artikel": "Bijlage I, basismodule B1–B11",
+        "onderwerp": "Modules",
+        "citaat": "B1 Grondslag voor het opstellen van informatie; B2 Praktijken, beleid en toekomstige initiatieven voor de transitie naar een duurzamere economie; B3 Energie en broeikasgasemissies; B4 Verontreiniging van lucht, water en bodem; B5 Biodiversiteit; B6 Water; B7 Gebruik van hulpbronnen, circulaire economie en afvalbeheer; B8 Personeel — Algemene kenmerken; B9 Personeel — Gezondheid en veiligheid; B10 Personeel — Vergoeding, collectieve onderhandelingen en opleiding; B11 Veroordelingen en boeten voor corruptie en omkoping"
+      },
+      {
+        "artikel": "Aanbeveling, aanbeveling aan grote ondernemingen (na punt 3)",
+        "onderwerp": "Vragen aan MKB beperken tot VSME",
+        "citaat": "hun verzoeken om dergelijke informatie zoveel mogelijk beperken tot de informatie die wordt verstrekt op grond van de vrijwillige duurzaamheidsrapporteringsstandaard"
+      }
+    ],
+    "wijzigingen": [
+      {
+        "titel": "Gedelegeerde Verordening (EU) 2026/1560",
+        "nummer": "CELEX 32026R1560",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32026R1560#anx_I",
+        "effect": "Neemt een vrijwillige standaard met dezelfde B1–B11-indeling op in bijlage I als gedelegeerde handeling onder art. 29 quater bis 2013/34/EU."
+      }
+    ],
+    "toelichting_url": "https://finance.ec.europa.eu/regulation-and-supervision/financial-services-legislation/implementing-and-delegated-acts/corporate-sustainability-reporting-directive_en",
+    "status_wet": "aanbeveling",
+    "geverifieerd": true,
+    "opmerking": "Nummer, datum en B1–B11-titels geverifieerd (NL-teksten 2025/1710 en 2026/1560). Niet geverifieerd: of de Aanbeveling 2025/1710 formeel is ingetrokken of vervangen door 2026/1560; advies: in de app 2026/1560 bijlage I als primaire bron tonen voor scans vanaf boekjaar 2027. Citaten letterlijk uit de NL-tekst."
+  },
+  {
+    "key": "csddd",
+    "label": "CSDDD",
+    "titel": "Richtlijn (EU) 2024/1760 inzake passende zorgvuldigheid in het bedrijfsleven op het gebied van duurzaamheid (CSDDD), zoals gewijzigd",
+    "nummer": "Richtlijn (EU) 2024/1760",
+    "celex_of_bwb": "CELEX 32024L1760 (geconsolideerd 02024L1760-20260318)",
+    "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:02024L1760-20260318",
+    "url_artikel": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:02024L1760-20260318#art_2",
+    "artikelen": [
+      {
+        "artikel": "Art. 2, lid 1, punt a",
+        "onderwerp": "Drempel EU-ondernemingen",
+        "citaat": "de onderneming had gemiddeld meer dan 5 000 werknemers en had een netto-omzet wereldwijd van meer dan 1 500 000 000 EUR in het laatste boekjaar"
+      },
+      {
+        "artikel": "Art. 2, lid 2, punt a",
+        "onderwerp": "Drempel niet-EU-ondernemingen",
+        "citaat": "in de Unie een netto-omzet gegenereerd van meer dan 1 500 000 000 EUR"
+      },
+      {
+        "artikel": "Art. 5, lid 1",
+        "onderwerp": "Verplichting",
+        "citaat": "ondernemingen een risicogebaseerde passende zorgvuldigheid op het gebied van mensenrechten en milieu [...] betrachten"
+      },
+      {
+        "artikel": "Art. 8, lid 2 bis, punt a",
+        "onderwerp": "Bescherming kleinere zakenpartners (trickle-down)",
+        "citaat": "in het geval van zakenpartners met minder dan 5 000 werknemers, alleen wanneer de informatie redelijkerwijs niet op andere wijze kan worden verkregen"
+      },
+      {
+        "artikel": "Art. 37, lid 1",
+        "onderwerp": "Omzetting/toepassing",
+        "citaat": "uiterlijk op 26 juli 2028 [...] Zij passen die bepalingen toe met ingang van 26 juli 2029"
+      }
+    ],
+    "wijzigingen": [
+      {
+        "titel": "Richtlijn (EU) 2026/470 (Omnibus I) tot wijziging van Richtlijnen 2006/43/EG, 2013/34/EU, (EU) 2022/2464 en (EU) 2024/1760",
+        "nummer": "(EU) 2026/470 – CELEX 32026L0470 – PB L 2026/470 van 26-02-2026, in werking 18-03-2026",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32026L0470",
+        "effect": "Drempel naar >5 000 werknemers en >EUR 1,5 mrd; transitieplan-plicht geschrapt; EU-aansprakelijkheidsregime geschrapt; boete max. 3 %; omzetting 26-07-2028, toepassing 26-07-2029."
+      },
+      {
+        "titel": "Richtlijn (EU) 2025/794 ('stop-the-clock')",
+        "nummer": "(EU) 2025/794 – CELEX 32025L0794",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32025L0794",
+        "effect": "Eerder uitstel (art. 2 Richtlijn 2025/794); inmiddels overschreven door 2026/470."
+      }
+    ],
+    "toelichting_url": "https://www.consilium.europa.eu/en/press/press-releases/2026/02/24/council-signs-off-simplification-of-sustainability-reporting-and-due-diligence-requirements-to-boost-eu-competitiveness/",
+    "status_wet": "wet",
+    "geverifieerd": true,
+    "opmerking": "Geverifieerd in NL geconsolideerde tekst 18-03-2026. Voor MKB alleen indirect (via de keten). Er is geen NL-overheidspagina gevonden die al op de nieuwe drempels is bijgewerkt; daarom staat het Raadsbericht als toelichting."
+  },
+  {
+    "key": "eu_taxonomie",
+    "label": "EU Taxonomie",
+    "titel": "Verordening (EU) 2020/852 betreffende de totstandbrenging van een kader ter bevordering van duurzame beleggingen (Taxonomieverordening)",
+    "nummer": "Verordening (EU) 2020/852",
+    "celex_of_bwb": "CELEX 32020R0852",
+    "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32020R0852",
+    "url_artikel": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32020R0852#art_8",
+    "artikelen": [
+      {
+        "artikel": "Art. 8, lid 1",
+        "onderwerp": "Toepassingsgebied = CSRD-plichtigen (art. 19 bis/29 bis 2013/34/EU)",
+        "citaat": "Een onderneming die op grond van artikel 19 bis of artikel 29 bis van Richtlijn 2013/34/EU verplicht is niet-financiële informatie openbaar te maken, neemt [...] informatie op over hoe en in welke mate de activiteiten van de onderneming verband houden met economische activiteiten die als ecologisch duurzaam kunnen worden aangemerkt"
+      },
+      {
+        "artikel": "Art. 8, lid 2",
+        "onderwerp": "KPI's omzet/CapEx/OpEx",
+        "citaat": "het aandeel van hun omzet uit producten of diensten die verband houden met economische activiteiten die [...] als ecologisch duurzaam kunnen worden aangemerkt"
+      }
+    ],
+    "wijzigingen": [
+      {
+        "titel": "Gedelegeerde Verordening (EU) 2026/73 (vereenvoudiging art. 8-rapportage; wijzigt 2021/2178, 2021/2139, 2023/2486)",
+        "nummer": "(EU) 2026/73 – CELEX 32026R0073 – PB L 8-1-2026",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32026R0073",
+        "effect": "Materialiteitsdrempel: activiteiten <10 % van omzet/CapEx/OpEx mogen buiten de beoordeling blijven; van toepassing vanaf 1-1-2026 (optioneel voor boekjaar 2025)."
+      },
+      {
+        "titel": "Richtlijn (EU) 2026/470 (Omnibus I) tot wijziging van Richtlijnen 2006/43/EG, 2013/34/EU, (EU) 2022/2464 en (EU) 2024/1760",
+        "nummer": "(EU) 2026/470 – CELEX 32026L0470 – PB L 2026/470 van 26-02-2026, in werking 18-03-2026",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32026L0470",
+        "effect": "Indirect: de drempel van art. 8 volgt de CSRD-drempel (>1 000 werknemers en >EUR 450 mln), omdat art. 8 verwijst naar art. 19 bis/29 bis."
+      }
+    ],
+    "toelichting_url": "https://finance.ec.europa.eu/regulation-and-supervision/financial-services-legislation/implementing-and-delegated-acts/taxonomy-regulation_en",
+    "status_wet": "wet",
+    "geverifieerd": true,
+    "opmerking": "Art. 8-tekst geverifieerd in de oorspronkelijke NL-tekst. Er is geen recentere geconsolideerde versie opgehaald, maar art. 8 is tekstueel niet gewijzigd. De toelichtings-URL is niet apart gecontroleerd. Voor MKB alleen relevant via banken of groene financiering."
+  },
+  {
+    "key": "eudr",
+    "label": "EUDR",
+    "titel": "Verordening (EU) 2023/1115 betreffende ontbossingsvrije producten (EUDR), zoals gewijzigd",
+    "nummer": "Verordening (EU) 2023/1115",
+    "celex_of_bwb": "CELEX 32023R1115 (geconsolideerd 02023R1115-20260918)",
+    "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:02023R1115-20260918",
+    "url_artikel": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:02023R1115-20260918#art_38",
+    "artikelen": [
+      {
+        "artikel": "Art. 3",
+        "onderwerp": "Verbod / kernverplichting",
+        "citaat": "Relevante grondstoffen en relevante producten mogen niet in de handel worden gebracht, op de markt worden aangeboden of worden uitgevoerd, tenzij [...] zij ontbossingsvrij zijn"
+      },
+      {
+        "artikel": "Art. 4, lid 1",
+        "onderwerp": "Zorgvuldigheid marktdeelnemers",
+        "citaat": "Overeenkomstig artikel 8 betrachten marktdeelnemers zorgvuldigheid voordat zij relevante producten in de handel brengen of uitvoeren"
+      },
+      {
+        "artikel": "Art. 4 bis (anker #art_4a)",
+        "onderwerp": "Vereenvoudigde aangifte primaire micro/kleine marktdeelnemers",
+        "citaat": "Primaire micro- of kleine marktdeelnemers dienen [...] een eenmalige vereenvoudigde aangifte in"
+      },
+      {
+        "artikel": "Art. 38, leden 2 en 3",
+        "onderwerp": "Toepassingsdata (drempel naar omvang)",
+        "citaat": "van toepassing met ingang van 30 december 2026. [...] micro- of kleine onderneming in de zin van artikel 3, lid 1, respectievelijk lid 2, [...] van Richtlijn 2013/34/EU [...] met ingang van 30 juni 2027"
+      },
+      {
+        "artikel": "Bijlage I",
+        "onderwerp": "Producten (GN-codes)",
+        "citaat": "Lijst van relevante producten: rund, cacao, koffie, oliepalm, rubber, soja, hout"
+      }
+    ],
+    "wijzigingen": [
+      {
+        "titel": "Verordening (EU) 2024/3234",
+        "nummer": "CELEX 32024R3234",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32024R3234",
+        "effect": "Eerste uitstel met 12 maanden."
+      },
+      {
+        "titel": "Verordening (EU) 2025/2650 (vereenvoudiging + uitstel)",
+        "nummer": "CELEX 32025R2650 – PB L 23-12-2025, in werking 26-12-2025",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32025R2650",
+        "effect": "Toepassing 30-12-2026 (groot/middel) en 30-06-2027 (micro/klein); vereenvoudigde aangifte; drukwerk uit scope; Commissie-review 30-04-2026."
+      },
+      {
+        "titel": "Gedelegeerde Verordening (EU) 2026/2102",
+        "nummer": "(EU) 2026/2102",
+        "url": "https://environment.ec.europa.eu/topics/forests/deforestation/regulation-deforestation-free-products_en",
+        "effect": "Voegt producten toe aan bijlage I (o.a. oploskoffie, palmolie-derivaten), van toepassing vanaf 30-12-2027 (volgens Commissie)."
+      }
+    ],
+    "toelichting_url": "https://www.nvwa.nl/onderwerpen/plant/eudr-ontbossingsverordening",
+    "status_wet": "wet",
+    "geverifieerd": true,
+    "opmerking": "Art. 3, 4, 4 bis en 38 geverifieerd in de NL geconsolideerde tekst 18-09-2026. Het citaat bij bijlage I is een samenvatting, geen letterlijke tekst. Over 2026/2102 staat alleen de datum uit de Commissiepagina hier; de tekst zelf is niet gelezen. Niet nagegaan: of de review van april 2026 tot een nieuw wetsvoorstel heeft geleid."
+  },
+  {
+    "key": "cbam",
+    "label": "CBAM",
+    "titel": "Verordening (EU) 2023/956 tot instelling van een mechanisme voor koolstofcorrectie aan de grens (CBAM), zoals gewijzigd",
+    "nummer": "Verordening (EU) 2023/956",
+    "celex_of_bwb": "CELEX 32023R0956 (geconsolideerd 02023R0956-20251020)",
+    "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:02023R0956-20251020",
+    "url_artikel": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:02023R0956-20251020#art_2a",
+    "artikelen": [
+      {
+        "artikel": "Art. 2 bis, lid 1 (anker #art_2a)",
+        "onderwerp": "De-minimisvrijstelling (drempel)",
+        "citaat": "wordt vrijgesteld van de verplichtingen uit hoofde van deze verordening indien de nettomassa van de ingevoerde goederen in een bepaald kalenderjaar niet cumulatief de in punt 1 van bijlage VII vastgestelde unieke op massa gebaseerde drempelwaarde [...] overschrijdt"
+      },
+      {
+        "artikel": "Bijlage VII, punt 1 (anker #anx_VII)",
+        "onderwerp": "Hoogte drempel",
+        "citaat": "De in artikel 2 bis bedoelde unieke op massa gebaseerde drempelwaarde wordt vastgesteld op 50 ton nettomassa."
+      },
+      {
+        "artikel": "Art. 2 bis, leden 2 en 4",
+        "onderwerp": "Bij overschrijding alles; niet voor elektriciteit/waterstof",
+        "citaat": "onderworpen aan alle verplichtingen [...] met betrekking tot alle emissies die zijn ingebed in alle in dat kalenderjaar ingevoerde goederen. [...] Dit artikel is niet van toepassing op de invoer van elektriciteit of waterstof."
+      },
+      {
+        "artikel": "Art. 4",
+        "onderwerp": "Verplichting toegelaten CBAM-aangever",
+        "citaat": "Goederen mogen uitsluitend door een toegelaten CBAM-aangever in het douanegebied van de Unie worden ingevoerd."
+      },
+      {
+        "artikel": "Art. 6, lid 1",
+        "onderwerp": "Jaarlijkse CBAM-aangifte",
+        "citaat": "Uiterlijk op 30 september van elk jaar, en voor het eerst in 2027 voor het jaar 2026, [...] een CBAM-aangifte voor het voorgaande kalenderjaar"
+      }
+    ],
+    "wijzigingen": [
+      {
+        "titel": "Verordening (EU) 2025/2083 van 8 oktober 2025 (vereenvoudiging en versterking CBAM)",
+        "nummer": "CELEX 32025R2083",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32025R2083",
+        "effect": "Voert de 50-ton-de-minimis in (art. 2 bis + bijlage VII), vanaf 1-1-2026; verschuift de eerste aangifte naar 30-09-2027 en vereenvoudigt toelating en berekening."
+      }
+    ],
+    "toelichting_url": "https://www.emissieautoriteit.nl/vraag-en-antwoord/faq-cbam/hoe-werkt-de-ondergrens-van-50-ton",
+    "status_wet": "wet",
+    "geverifieerd": true,
+    "opmerking": "Geverifieerd in de NL geconsolideerde tekst 20-10-2025; EUR-Lex gaf op 20-10-2026 geen nieuwere consolidatie. Commissie-beoordeling 30-09-2026: de drempel van 50 t blijft (0,87 % van de emissies). Douane-pagina als extra bron: https://www.douane.nl/onderwerpen/vgem/milieu/cbam/"
+  },
+  {
+    "key": "energiebesparingsplicht",
+    "label": "NL Energiebesparingsplicht",
+    "titel": "Besluit activiteiten leefomgeving (Bal), Hoofdstuk 5, afdeling 5.4, paragraaf 5.4.1 (Omgevingswet)",
+    "nummer": "Bal art. 5.15 t/m 5.15d",
+    "celex_of_bwb": "BWBR0041330",
+    "url": "https://wetten.overheid.nl/BWBR0041330/",
+    "url_artikel": "https://wetten.overheid.nl/BWBR0041330/#Hoofdstuk5_Afdeling5.4_Paragraaf5.4.1_Artikel5.15",
+    "artikelen": [
+      {
+        "artikel": "Bal art. 5.15, lid 1",
+        "onderwerp": "Verplichting (energiebesparingsplicht)",
+        "citaat": "Alle maatregelen ter verduurzaming van het energiegebruik met een terugverdientijd van ten hoogste vijf jaar worden getroffen."
+      },
+      {
+        "artikel": "Bal art. 5.15, lid 3, onder a",
+        "onderwerp": "Ondergrens (drempel)",
+        "citaat": "als het energiegebruik van de milieubelastende activiteit in enig kalenderjaar kleiner is dan 50.000 kWh elektriciteit en 25.000 m3 aardgasequivalenten"
+      },
+      {
+        "artikel": "Bal art. 5.15, lid 4",
+        "onderwerp": "Erkende Maatregelenlijst (EML)",
+        "citaat": "Aan het eerste lid is in ieder geval voldaan als alle van toepassing zijnde bij ministeriële regeling vastgestelde maatregelen [...] zijn getroffen"
+      },
+      {
+        "artikel": "Bal art. 5.15a, lid 1 (anker ..._Artikel5.15a)",
+        "onderwerp": "Informatieplicht (eens per 4 jaar)",
+        "citaat": "worden uiterlijk op 1 december 2023 en daarna eenmaal per vier jaar aan het bevoegd gezag [...] de volgende gegevens en bescheiden verstrekt"
+      },
+      {
+        "artikel": "Bal art. 5.15b, lid 1 (anker ..._Artikel5.15b)",
+        "onderwerp": "Onderzoeksplicht (grootverbruikers)",
+        "citaat": "groter is dan 10.000.000 kWh elektriciteit of 170.000 m3 aardgasequivalenten wordt onderzoek verricht naar alle mogelijke maatregelen"
+      },
+      {
+        "artikel": "Bal art. 5.15c",
+        "onderwerp": "Indienen via eLoket",
+        "citaat": "worden verstrekt met gebruikmaking van een elektronische voorziening en een elektronisch formulier"
+      }
+    ],
+    "wijzigingen": [
+      {
+        "titel": "Actualisatie energiebesparingsplicht 2027 (consultatie; nog geen Staatsblad)",
+        "nummer": "Ontwerpbesluit/-regeling, consultatie april 2026",
+        "url": "https://iplo.nl/thema/energiebesparing/nieuws-energiebesparing/2026/wijzigingen-energiebesparingsplicht-2027-bekend/",
+        "effect": "VOORGENOMEN (nog geen wet), beoogd per 1-7-2027: terugverdientijd van 5 naar 7 jaar; ondergrenzen blijven 50.000 kWh / 25.000 m3; informatieplicht ligt altijd bij de uitvoerder van de activiteit; sectoren schuiven van onderzoeks- naar informatieplicht."
+      }
+    ],
+    "toelichting_url": "https://www.rvo.nl/onderwerpen/energiebesparingsplicht",
+    "status_wet": "wet",
+    "geverifieerd": true,
+    "opmerking": "Tekst geverifieerd op wetten.overheid.nl (versie geldend vanaf 01-10-2026). Let op: art. 5.16 gaat over maatwerk, niet over de informatieplicht; die staat in 5.15a. Volgende informatieplicht-ronde volgens 5.15a: 1-12-2027. RVO-subpagina informatieplicht: https://www.rvo.nl/onderwerpen/energiebesparingsplicht/informatieplicht-energiebesparing (status niet apart gecontroleerd). Ankers wetten.overheid.nl: #Hoofdstuk5_Afdeling5.4_Paragraaf5.4.1_Artikel5.15a / 5.15b."
+  },
+  {
+    "key": "co2_prestatieladder",
+    "label": "CO2-Prestatieladder",
+    "titel": "Handboek CO2-Prestatieladder versie 4.0 (SKAO), Trede 1/2/3 (januari 2025) – NORM, GEEN WET",
+    "nummer": "Handboek 4.0 (Trede 1, januari 2025)",
+    "celex_of_bwb": "n.v.t. (private norm SKAO)",
+    "url": "https://www.co2-prestatieladder.nl/documenten/download-versie-4-0-trede-1/",
+    "url_artikel": "https://www.co2-prestatieladder.nl/app/uploads/2025/01/Trede-1-print.pdf",
+    "artikelen": [
+      {
+        "artikel": "Handboek 4.0 Trede 1, Deel 1 §4.2",
+        "onderwerp": "Omvang organisatie (klein = vrijstellingen)",
+        "citaat": "Organisaties zijn klein als zij aan tenminste twee van de volgende drie voorwaarden [...] voldoen: [...] ≤ 250 FTE; [...] ≤ 50 miljoen euro; [...] ≤ 25 miljoen euro."
+      },
+      {
+        "artikel": "Handboek 4.0 Trede 1, Deel 1 §4.4",
+        "onderwerp": "Inzicht in wettelijke verplichtingen",
+        "citaat": "Hoofdstuktitel: 'Inzicht in wettelijke verplichtingen' (koppeling met o.a. energiebesparingsplicht)"
+      },
+      {
+        "artikel": "Handboek 4.0 Trede 1, Deel 1 §6.2 en §9.1",
+        "onderwerp": "Doelstellingen; monitoring, emissie-inventaris, emissiefactoren",
+        "citaat": "Hoofdstuktitels: 'Doelstellingen en de planning om ze te bereiken'; 'Monitoren, meten, analyseren en evalueren van energie- en CO2-prestaties'"
+      },
+      {
+        "artikel": "Handboek 4.0 Trede 1, Deel 2",
+        "onderwerp": "Eisen per invalshoek",
+        "citaat": "Invalshoek A – Inzicht; B – Reductie; C – Communicatie; D – Samenwerking"
+      }
+    ],
+    "wijzigingen": [
+      {
+        "titel": "Overgang 3.1 → 4.0 bij aanbesteden",
+        "nummer": "SKAO-blog 'Aanbesteden met CO2-Prestatieladder 4.0'",
+        "url": "https://www.co2-prestatieladder.nl/blog/aanbesteden-met-co2-prestatieladder-versie-4-0/",
+        "effect": "Vanaf januari 2027 zijn aanbestedingen met versie 3.1 van het gunningscriterium niet meer mogelijk. Fictieve korting als gunningsvoordeel, bijv. trede 1/2/3 = 5/10/15 %."
+      }
+    ],
+    "toelichting_url": "https://www.co2-prestatieladder.nl/documenten/",
+    "status_wet": "norm",
+    "geverifieerd": true,
+    "opmerking": "NORM, GEEN WET: het is een certificeerbare norm en een gunningscriterium in aanbestedingen (gunningsvoordeel), geen wettelijke plicht. Paragraafnummers geverifieerd in de PDF Trede 1 (print, januari 2025). Trede 2 en 3 zijn aparte PDF's via /documenten/download-versie-4-0-trede-2/ en -3/. Een interactieve versie staat op /app/uploads/2025/03/Versie-4.0-Trede-1.pdf."
+  },
+  {
+    "key": "mkb_categorie",
+    "label": "MKB-categorie (micro/klein/middel)",
+    "titel": "Aanbeveling 2003/361/EG (MKB-definitie EU) + Richtlijn 2013/34/EU art. 3 (jaarrekeningcategorieën, bedragen gewijzigd door Gedelegeerde Richtlijn (EU) 2023/2775) + BW Boek 2 art. 2:395a/396/397",
+    "nummer": "Aanbeveling 2003/361/EG; Richtlijn 2013/34/EU art. 3; BW 2:395a, 2:396, 2:397",
+    "celex_of_bwb": "CELEX 32003H0361; CELEX 02013L0034-20260318; BWBR0003045",
+    "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32003H0361",
+    "url_artikel": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:02013L0034-20260318#art_3",
+    "artikelen": [
+      {
+        "artikel": "Aanbeveling 2003/361/EG, bijlage, art. 2 lid 1",
+        "onderwerp": "KMO (EU-subsidies/steun; personen + omzet OF balans)",
+        "citaat": "ondernemingen waar minder dan 250 personen werkzaam zijn en waarvan de jaaromzet 50 miljoen EUR of het jaarlijkse balanstotaal 43 miljoen EUR niet overschrijdt"
+      },
+      {
+        "artikel": "Aanbeveling 2003/361/EG, bijlage, art. 2 lid 2",
+        "onderwerp": "Klein",
+        "citaat": "minder dan 50 personen werkzaam zijn en waarvan de jaaromzet of het jaarlijkse balanstotaal 10 miljoen EUR niet overschrijdt"
+      },
+      {
+        "artikel": "Aanbeveling 2003/361/EG, bijlage, art. 2 lid 3",
+        "onderwerp": "Micro",
+        "citaat": "minder dan 10 personen werkzaam zijn en waarvan de jaaromzet of het jaarlijkse balanstotaal 2 miljoen EUR niet overschrijdt"
+      },
+      {
+        "artikel": "Richtlijn 2013/34/EU art. 3 leden 1–4 (anker #art_3)",
+        "onderwerp": "Jaarrekeningcategorieën (2 van 3 criteria)",
+        "citaat": "micro: balanstotaal 450 000 EUR; netto-omzet 900 000 EUR; personeel 10 | klein: 5 000 000 / 10 000 000 / 50 (lidstaat mag tot 7 500 000 / 15 000 000) | middelgroot: 25 000 000 / 50 000 000 / 250"
+      },
+      {
+        "artikel": "BW 2:396 lid 1",
+        "onderwerp": "NL klein",
+        "citaat": "activa [...] niet meer dan € 7.500.000; b. de netto-omzet [...] niet meer dan € 15.000.000; c. het gemiddeld aantal werknemers [...] minder dan 50"
+      },
+      {
+        "artikel": "BW 2:397 lid 1",
+        "onderwerp": "NL middelgroot",
+        "citaat": "activa [...] niet meer dan € 25.000.000; b. de netto-omzet [...] niet meer dan € 50.000.000; c. [...] minder dan 250"
+      },
+      {
+        "artikel": "BW 2:395a lid 1",
+        "onderwerp": "NL micro",
+        "citaat": "activa [...] niet meer dan € 350.000 [Red: per 13 maart 2024: € 450.000]; b. de netto-omzet [...] niet meer dan € 700.000 [Red: per 13 maart 2024: € 900.000]; c. [...] minder dan 10"
+      }
+    ],
+    "wijzigingen": [
+      {
+        "titel": "Gedelegeerde Richtlijn (EU) 2023/2775 (inflatiecorrectie grootteklassen)",
+        "nummer": "CELEX 32023L2775",
+        "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32023L2775",
+        "effect": "Verhoogt de bedragen in art. 3 van 2013/34/EU met circa 25 %; lidstaten passen dit toe voor boekjaren vanaf 1-1-2024."
+      }
+    ],
+    "toelichting_url": "https://single-market-economy.ec.europa.eu/smes/sme-fundamentals/sme-definition_en",
+    "status_wet": "wet",
+    "geverifieerd": true,
+    "opmerking": "Twee verschillende definities. (1) De EU-MKB-definitie (2003/361) is een aanbeveling voor steun en subsidies; ze telt personen en omzet OF balans en heeft geen 2-van-3-regel. (2) De jaarrekeningcategorie (2013/34 art. 3 / BW 2:395a-397) telt 2 van 3 criteria op twee opeenvolgende balansdata. EUDR art. 38 verwijst naar (2). Aanbeveling 2003/361 heeft geen EUR-Lex-artikelankers. BW-ankers: https://wetten.overheid.nl/BWBR0003045/#Boek2_Titeldeel9_Afdeling11_Artikel396 (idem Artikel395a, Artikel397). De tekst van BW 2:395a toont op wetten.overheid.nl nog de oude bedragen met een redactionele noot over de nieuwe; laat de app 450k/900k gebruiken."
+  },
+  {
+    "key": "ecgt",
+    "label": "ECGT (claimcheck)",
+    "titel": "Richtlijn (EU) 2024/825 wat betreft het versterken van de positie van de consument voor de groene transitie (ECGT/EmpCo), wijzigt Richtlijn 2005/29/EG (oneerlijke handelspraktijken)",
+    "nummer": "Richtlijn (EU) 2024/825",
+    "celex_of_bwb": "CELEX 32024L0825; NL: BW Boek 6 art. 6:193a e.v. (BWBR0005289)",
+    "url": "https://eur-lex.europa.eu/legal-content/NL/TXT/?uri=CELEX:32024L0825",
+    "url_artikel": "https://wetten.overheid.nl/BWBR0005289/#Boek6_Titeldeel3_Afdeling3A_Artikel193g",
+    "artikelen": [
+      {
+        "artikel": "Richtlijn 2024/825 art. 4 lid 1",
+        "onderwerp": "Toepassingsdatum",
+        "citaat": "De lidstaten passen die bepalingen toe vanaf 27 september 2026."
+      },
+      {
+        "artikel": "Bijlage, punt 4 bis (bijlage I Richtlijn 2005/29) = BW 6:193g onder ac",
+        "onderwerp": "Verbod generieke milieuclaim",
+        "citaat": "een generieke milieuclaim maken zonder dat de handelaar erkende voortreffelijke milieuprestaties kan aantonen die relevant zijn voor de claim"
+      },
+      {
+        "artikel": "Punt 4 quater = BW 6:193g onder ae",
+        "onderwerp": "Verbod compensatieclaims (CO2-neutraal via offsets)",
+        "citaat": "beweren dat een product dankzij de compensatie van broeikasgasemissies een neutraal, verminderd of positief milieueffect heeft"
+      },
+      {
+        "artikel": "Punt 2 bis = BW 6:193g onder ab",
+        "onderwerp": "Eigen keurmerken",
+        "citaat": "een duurzaamheidskeurmerk weergeven dat niet op een certificeringsregeling is gebaseerd of niet door overheidsinstanties is ingesteld"
+      },
+      {
+        "artikel": "Punt 4 ter = BW 6:193g onder ad",
+        "onderwerp": "Claim over geheel terwijl alleen deel",
+        "citaat": "een milieuclaim maken voor het volledige product of alle bedrijfsactiviteiten van de handelaar, terwijl de claim slechts op een bepaald aspect [...] betrekking heeft"
+      },
+      {
+        "artikel": "Art. 1 → art. 6 lid 2 punt d Richtlijn 2005/29",
+        "onderwerp": "Toekomstclaims (bijv. 'net zero 2040')",
+        "citaat": "het maken van een milieuclaim met betrekking tot toekomstige milieuprestaties zonder duidelijke, objectieve, openbaar toegankelijke en verifieerbare verplichtingen [...] uitvoeringsplan [...] geverifieerd door een onafhankelijke externe deskundige"
+      }
+    ],
+    "wijzigingen": [
+      {
+        "titel": "Implementatiewet richtlijn betere duurzaamheidsinformatie voor consumenten (Wet van 27 mei 2026)",
+        "nummer": "Stb. 2026, 152; inwerkingtreding via Stb. 2026, 204",
+        "url": "https://zoek.officielebekendmakingen.nl/stb-2026-152.html",
+        "effect": "Zet ECGT om in BW Boek 6 (o.a. definities in 6:193a lid 1 onder q–t, zwarte lijst 6:193g onder ab e.v.)."
+      },
+      {
+        "titel": "ACM Leidraad Duurzaamheidsclaims (versie 2, 2023)",
+        "nummer": "ACM/20/039986",
+        "url": "https://www.acm.nl/nl/publicaties/leidraad-duurzaamheidsclaims-0",
+        "effect": "Toezichthouder-uitleg. ACM meldt zelf dat de leidraad mogelijk verouderd is."
+      }
+    ],
+    "toelichting_url": "https://www.acm.nl/nl/publicaties/vanaf-27-september-2026-strengere-eisen-aan-duurzaamheidsclaims",
+    "status_wet": "wet",
+    "geverifieerd": true,
+    "opmerking": "Geverifieerd: richtlijntekst NL, Stb. 2026, 152, en BW 6:193g op wetten.overheid.nl. DISCREPANTIE: het KB (Stb. 2026, 204, uitgegeven 15-07-2026) laat de wet de dag na uitgifte in werking treden, en wetten.overheid.nl toont 6:193g 'geldend van 16-07-2026'. ACM communiceert 27-09-2026 als datum vanaf wanneer de regels gelden. Advies voor de app: 'geldt vanaf 27-09-2026' (de richtlijndatum); per peildatum 20-10-2026 geldt het in elk geval. ECGT geldt alleen voor B2C-claims; voor B2B-claims blijft de algemene misleidingsregel gelden. De Green Claims Directive is geen grondslag."
+  }
+]

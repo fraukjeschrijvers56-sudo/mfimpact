@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { assessLegislation, analyzeClientTypes, extractLegislationFactsForTest } from '../lib/legislation-status.ts';
+import {
+  WETGEVING_BRONNEN,
+  WETGEVING_THRESHOLDS,
+  collectLegalSourceUrls,
+  getLegalSourceDisplay,
+} from '../lib/wetgeving-bronnen.ts';
 
 describe('assessLegislation', () => {
   it('maps onvoldoende gegevens / onbekend / niet geïdentificeerd to TE ONDERZOEKEN, never NVT', () => {
@@ -190,5 +196,41 @@ describe('PCO Management fixture', () => {
     const types = analyzeClientTypes(facts);
     assert.equal(types.constructionInfra, true);
     assert.equal(types.governmentOrTender, true);
+
+    assert.equal(result.referenceDate, '2026-10-20');
+    for (const row of result.items) {
+      assert.ok(row.legal, `${row.id} must have a legal source`);
+      assert.ok(row.legal?.urlArtikel, `${row.id} needs urlArtikel`);
+      assert.ok(row.legal?.bronLabel, `${row.id} needs bronLabel`);
+    }
+    assert.equal(result.items.find((i) => i.id === 'csrd')?.legal?.urlArtikel?.includes('#art_19a'), true);
+    assert.equal(result.items.find((i) => i.id === 'eu_taxonomie')?.legal?.key, 'eu_taxonomie');
+    assert.equal(result.items.find((i) => i.id === 'co2_prestatieladder')?.legal?.normGeenWet, true);
+    assert.match(result.items.find((i) => i.id === 'csrd')?.notes?.join(' ') || '', /Omnibus I \(EU\) 2026\/470/);
+    assert.match(result.items.find((i) => i.id === 'csddd')?.notes?.join(' ') || '', /26-07-2029/);
+    assert.match(result.items.find((i) => i.id === 'eudr')?.notes?.join(' ') || '', /30-12-2026/);
+    assert.match(result.items.find((i) => i.id === 'cbam')?.notes?.join(' ') || '', /30-09-2027/);
+    assert.match(result.items.find((i) => i.id === 'energiebesparingsplicht')?.notes?.join(' ') || '', /5\.15a/);
+    assert.ok(result.items.find((i) => i.id === 'eudr')?.legal?.opmerking);
+  });
+});
+
+describe('wetgeving-bronnen', () => {
+  it('loads 11 verified sources and matching thresholds', () => {
+    assert.equal(WETGEVING_BRONNEN.length, 11);
+    assert.equal(WETGEVING_THRESHOLDS.CSRD_FTE, 1000);
+    assert.equal(WETGEVING_THRESHOLDS.CSRD_OMZET, 450_000_000);
+    assert.equal(WETGEVING_THRESHOLDS.CSDDD_FTE, 5000);
+    assert.equal(WETGEVING_THRESHOLDS.CSDDD_OMZET, 1_500_000_000);
+    assert.equal(WETGEVING_THRESHOLDS.MICRO_BALANS, 450_000);
+    assert.equal(WETGEVING_THRESHOLDS.MICRO_OMZET, 900_000);
+    assert.equal(WETGEVING_THRESHOLDS.CBAM_TON, 50);
+    const urls = collectLegalSourceUrls();
+    assert.ok(urls.some((u) => u.includes('eur-lex.europa.eu')));
+    assert.ok(urls.some((u) => u.includes('wetten.overheid.nl')));
+    const eudr = getLegalSourceDisplay('eudr');
+    assert.ok(eudr?.opmerking && /2026\/2102/.test(eudr.opmerking));
+    const csrd = getLegalSourceDisplay('csrd');
+    assert.ok(csrd?.wijzigingen.some((w) => /Omnibus I \(EU\) 2026\/470/.test(w.label)));
   });
 });

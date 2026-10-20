@@ -1,9 +1,10 @@
 /**
  * Claim Check Rules (ECGT + ACM Leidraad, stand oktober 2026)
  * 
- * Kader: Richtlijn Empowering Consumers (ECGT), van toepassing sinds 27-09-2026
+ * Kader: Richtlijn (EU) 2024/825 (ECGT), van toepassing vanaf 27-09-2026; NL BW 6:193g
  * ACM Leidraad Duurzaamheidsclaims
  * Green Claims Directive is GEEN basis (ingetrokken/on hold)
+ * Bron: https://wetten.overheid.nl/BWBR0005289/#Boek6_Titeldeel3_Afdeling3A_Artikel193g
  */
 
 export type ClaimColor = 'red' | 'orange' | 'green';
@@ -37,7 +38,7 @@ export const RED_RULES: ClaimRule[] = [
     color: 'red',
     keywords: ['duurzaam', 'groen', 'eco', 'milieuvriendelijk', 'klimaatbewust', 'natuurvriendelijk', 'goed voor het milieu'],
     description: 'Generieke claims zonder erkend bewijs van uitmuntende prestaties zijn verboden',
-    legalBasis: 'ECGT art. 6(1)(b) + ACM Leidraad'
+    legalBasis: 'ECGT (Richtlijn 2024/825) / BW 6:193g onder ac + ACM Leidraad'
   },
   {
     id: 'climate-neutral-with-offsets',

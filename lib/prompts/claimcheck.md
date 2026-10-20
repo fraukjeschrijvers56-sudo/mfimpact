@@ -12,7 +12,7 @@ Per claim beoordeel je:
 - citaat: letterlijk citaat van de claim
 - url: waar de claim staat
 - type: generiek, klimaatneutraal/compensatie, label, toekomstclaim, vergelijkend, specifiek
-- beoordeling: rood/oranje/groen volgens EU-richtlijn Empowering Consumers (ECGT, van toepassing sinds 27-09-2026) en ACM Leidraad Duurzaamheidsclaims
+- beoordeling: rood/oranje/groen volgens EU-richtlijn Empowering Consumers (ECGT, Richtlijn 2024/825, van toepassing vanaf 27-09-2026; NL BW 6:193g) en ACM Leidraad Duurzaamheidsclaims. Bron: https://wetten.overheid.nl/BWBR0005289/#Boek6_Titeldeel3_Afdeling3A_Artikel193g
 
 BEOORDELINGSCRITERIA
 ROOD:

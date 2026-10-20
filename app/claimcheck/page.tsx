@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import MainLayout from '../components/MainLayout';
 import GlassWindow from '../components/GlassWindow';
+import { EcgtLegalBanner } from '../components/WetgevingLegalLinks';
+import { ECGT_CLAIMCHECK } from '@/lib/ecgt-source';
 
 export default function ClaimcheckPage() {
   const [clients, setClients] = useState<any[]>([]);
@@ -103,6 +105,8 @@ export default function ClaimcheckPage() {
             </p>
           </div>
         </GlassWindow>
+
+        <EcgtLegalBanner variant="light" />
 
         <div className="bg-white shadow rounded-lg p-6 space-y-4">
           <div>
@@ -224,10 +228,11 @@ export default function ClaimcheckPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="font-semibold text-blue-900 mb-2">Over de claimcheck</h3>
           <p className="text-sm text-blue-800">
-            Deze tool controleert claims op basis van veelvoorkomende greenwashing-patronen en best practices 
-            uit de conceptversie van de EU Green Claims Directive. Het is een eerste screening; juridische 
-            toetsing en volledige onderbouwing blijven noodzakelijk. Let op vage termen, absolute claims 
-            zonder scope, en compensatieclaims zonder reductie-inspanningen.
+            Deze tool toetst claims aan de EU-richtlijn Empowering Consumers (ECGT, Richtlijn 2024/825),
+            van toepassing vanaf {ECGT_CLAIMCHECK.appliesFrom}, omgezet in NL BW 6:193g, en de ACM Leidraad
+            Duurzaamheidsclaims. De Green Claims Directive is geen grondslag. Het is een eerste screening;
+            juridische toetsing blijft noodzakelijk. Let op vage termen, absolute claims zonder scope, en
+            compensatieclaims zonder reductie-inspanningen.
           </p>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import MainLayout from '@/app/components/MainLayout';
 import GlassWindow from '@/app/components/GlassWindow';
+import { WetgevingLegalLinks } from '@/app/components/WetgevingLegalLinks';
 
 export default function DrempelcheckPage() {
   const [clients, setClients] = useState<any[]>([]);
@@ -114,7 +115,8 @@ export default function DrempelcheckPage() {
                     <p className="text-sm text-gray-700 mt-1">
                       {(item.reasons || []).join(' · ') || item.reason}
                     </p>
-                    {item.source && <p className="text-xs text-gray-500 mt-1">Bron: {item.source}</p>}
+                    {item.source && <p className="text-xs text-gray-500 mt-1">Gegevens: {item.source}</p>}
+                    <WetgevingLegalLinks legal={item.legal} variant="light" />
                     {item.needed && <p className="text-sm text-amber-800 mt-1">{item.needed}</p>}
                   </div>
                 ))}

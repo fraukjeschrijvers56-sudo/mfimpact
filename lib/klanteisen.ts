@@ -185,8 +185,8 @@ export const KLANTEISEN_KB: KlantEis[] = [
     eis: 'Groene claims ECGT + ACM Leidraad',
     gevraagd_door: 'ACM (handhaving)',
     niveau: 'KICK-OUT',
-    toelichting: 'WETTELIJK risico sinds 27-09-2026: ondeugdelijke groene claim = boete. Link naar claimcheck.',
-    bron_url: 'https://www.acm.nl/nl/publicaties/leidraad-duurzaamheidsclaims',
+    toelichting: 'WETTELIJK risico vanaf 27-09-2026 (Richtlijn 2024/825; NL BW 6:193g): ondeugdelijke groene claim = boete. Link naar claimcheck.',
+    bron_url: 'https://wetten.overheid.nl/BWBR0005289/#Boek6_Titeldeel3_Afdeling3A_Artikel193g',
     scan_koppeling: 'claims',
   },
 ];

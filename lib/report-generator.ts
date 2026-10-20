@@ -22,6 +22,7 @@ import {
   ImageRun,
   ShadingType,
   VerticalAlign,
+  ExternalHyperlink,
 } from 'docx';
 import PptxGenJS from 'pptxgenjs';
 import PDFDocument from 'pdfkit';
@@ -38,6 +39,7 @@ import {
   type LegislationItem,
   type LegislationStatus,
 } from './legislation-status';
+import { mergeBronnenlijst } from './wetgeving-bronnen';
 
 interface ReportData {
   client: any;
@@ -211,6 +213,33 @@ function tableCell(text: string, opts: { shade?: string; bold?: boolean; color?:
   });
 }
 
+function tableCellLink(text: string, url: string, opts: { shade?: string; width?: number } = {}) {
+  return new TableCell({
+    width: opts.width ? { size: opts.width, type: WidthType.DXA } : undefined,
+    shading: opts.shade ? { type: ShadingType.CLEAR, fill: opts.shade.replace('#', '') } : undefined,
+    verticalAlign: VerticalAlign.CENTER,
+    margins: { top: 60, bottom: 60, left: 80, right: 80 },
+    children: [
+      new Paragraph({
+        children: [
+          new ExternalHyperlink({
+            link: url,
+            children: [
+              new TextRun({
+                text: text || url,
+                font: 'Aptos',
+                size: 16,
+                color: '0563C1',
+                underline: {},
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
 function heading1(text: string): Paragraph {
   return new Paragraph({
     heading: HeadingLevel.HEADING_1,
@@ -308,7 +337,9 @@ function extractContext(data: ReportData) {
     gaten: Array.isArray(onderzoek.gaten) ? onderzoek.gaten : [],
     klanteisen: onderzoek.klanteisen || {},
     gesprek: onderzoek.gesprek || {},
-    bronnen: Array.isArray(onderzoek.doorzochte_bronnen) ? onderzoek.doorzochte_bronnen.map(String) : [],
+    bronnen: mergeBronnenlijst(
+      Array.isArray(onderzoek.doorzochte_bronnen) ? onderzoek.doorzochte_bronnen.map(String) : []
+    ),
     mvoRegister: dossier?.mvo_register || null,
     headingHex: hexColor(huisstijl.heading_color || huisstijl.secondary_color, '0C4643'),
     primaryHex: hexColor(huisstijl.primary_color, '039088'),
@@ -639,27 +670,33 @@ function generateWetgeving(legislation: LegislationAssessment, tableShade: strin
     new TableRow({
       tableHeader: true,
       children: [
-        tableCell('Wet', { bold: true, shade: '0C4643', color: 'FFFFFF' }),
-        tableCell('Status', { bold: true, shade: '0C4643', color: 'FFFFFF' }),
-        tableCell('Toelichting', { bold: true, shade: '0C4643', color: 'FFFFFF' }),
+        tableCell('Wet', { bold: true, shade: '0C4643', color: 'FFFFFF', width: 1600 }),
+        tableCell('Status', { bold: true, shade: '0C4643', color: 'FFFFFF', width: 1800 }),
+        tableCell('Toelichting', { bold: true, shade: '0C4643', color: 'FFFFFF', width: 3360 }),
+        tableCell('Bron (artikel)', { bold: true, shade: '0C4643', color: 'FFFFFF', width: 2600 }),
       ],
     }),
-    ...legislation.items.map(
-      (row, idx) =>
-        new TableRow({
-          children: [
-            tableCell(row.category, { shade: idx % 2 === 1 ? tableShade : 'FFFFFF' }),
-            tableCell(row.label, {
-              shade: row.color.replace('#', ''),
-              color: statusContrast(row.status),
-              bold: true,
-            }),
-            tableCell([row.reasons.join(' · '), row.needed, row.source ? `Bron: ${row.source}` : '']
-              .filter(Boolean)
-              .join(' — '), { shade: idx % 2 === 1 ? tableShade : 'FFFFFF' }),
-          ],
-        })
-    ),
+    ...legislation.items.map((row, idx) => {
+      const shade = idx % 2 === 1 ? tableShade : 'FFFFFF';
+      const bronCell = row.legal?.urlArtikel
+        ? tableCellLink(row.legal.bronLabel, row.legal.urlArtikel, { shade, width: 2600 })
+        : tableCell('', { shade, width: 2600 });
+      return new TableRow({
+        children: [
+          tableCell(row.category, { shade, width: 1600 }),
+          tableCell(row.label, {
+            shade: row.color.replace('#', ''),
+            color: statusContrast(row.status),
+            bold: true,
+            width: 1800,
+          }),
+          tableCell([row.reasons.join(' · '), row.needed, row.source ? `Gegevens: ${row.source}` : '']
+            .filter(Boolean)
+            .join(' — '), { shade, width: 3360 }),
+          bronCell,
+        ],
+      });
+    }),
   ];
   paragraphs.push(
     new Table({
@@ -955,7 +992,22 @@ function generateNextSteps(nextSteps: NextStep[], documentRequests: string[] = [
 
 function generateBronnenlijst(bronnen: string[]): Paragraph[] {
   if (!bronnen.length) return [bodyPara('Geen bronnen beschikbaar.')];
-  return bronnen.map((url) => bulletPara(url));
+  return bronnen.map((url) =>
+    new Paragraph({
+      spacing: { after: 80 },
+      bullet: { level: 0 },
+      children: [
+        /^https?:\/\//i.test(url)
+          ? new ExternalHyperlink({
+              link: url,
+              children: [
+                new TextRun({ text: url, font: 'Aptos', size: 20, color: '0563C1', underline: {} }),
+              ],
+            })
+          : new TextRun({ text: url, font: 'Aptos', size: 22 }),
+      ],
+    })
+  );
 }
 
 function generateDisclaimer(): Paragraph[] {
@@ -1114,6 +1166,7 @@ export async function generatePowerPointReport(data: ReportData): Promise<Buffer
         { text: 'Wet', options: { bold: true, color: 'FFFFFF', fill: { color: '0C4643' } } },
         { text: 'Status', options: { bold: true, color: 'FFFFFF', fill: { color: '0C4643' } } },
         { text: 'Toelichting', options: { bold: true, color: 'FFFFFF', fill: { color: '0C4643' } } },
+        { text: 'Bron (artikel)', options: { bold: true, color: 'FFFFFF', fill: { color: '0C4643' } } },
       ],
       ...legislation.items.map((row: LegislationItem) => [
         { text: row.category },
@@ -1125,10 +1178,16 @@ export async function generatePowerPointReport(data: ReportData): Promise<Buffer
             fill: { color: row.color.replace('#', '') },
           },
         },
-        { text: [row.reasons.join(' · '), row.needed, row.source ? `Bron: ${row.source}` : ''].filter(Boolean).join(' — ') },
+        { text: [row.reasons.join(' · '), row.needed, row.source ? `Gegevens: ${row.source}` : ''].filter(Boolean).join(' — ') },
+        row.legal?.urlArtikel
+          ? {
+              text: row.legal.bronLabel,
+              options: { hyperlink: { url: row.legal.urlArtikel }, color: '0563C1' },
+            }
+          : { text: '' },
       ]),
     ],
-    { x: 0.4, y: 1.35, w: 12.5, colW: [2.8, 2.6, 7.1], border: { pt: 0.4, color: primary }, fontFace: 'Aptos', fontSize: 10, color: '1A1A1A' }
+    { x: 0.4, y: 1.35, w: 12.5, colW: [2.0, 2.2, 4.6, 3.7], border: { pt: 0.4, color: primary }, fontFace: 'Aptos', fontSize: 9, color: '1A1A1A' }
   );
   wetSlide.addText(`${legislation.disclaimer} · peildatum ${legislation.referenceDate}`, {
     x: 0.5,
@@ -1263,16 +1322,24 @@ export async function generatePowerPointReport(data: ReportData): Promise<Buffer
 
   const bronSlide = pptx.addSlide();
   addContentHeader(bronSlide, '9. Bronnenlijst', huisstijl, logo);
-  bronSlide.addText(bronnen.length ? bronnen.map((u: string) => `• ${u}`).join('\n') : 'Geen bronnen beschikbaar.', {
-    x: 0.6,
-    y: 1.2,
-    w: 12.1,
-    h: 5.4,
-    fontSize: 14,
-    fontFace: 'Aptos',
-    color: '1A1A1A',
-    valign: 'top',
-  });
+  bronSlide.addText(
+    bronnen.length
+      ? bronnen.map((u: string) => ({
+          text: `• ${u}\n`,
+          options: /^https?:\/\//i.test(u) ? { hyperlink: { url: u }, color: '0563C1' } : {},
+        }))
+      : 'Geen bronnen beschikbaar.',
+    {
+      x: 0.6,
+      y: 1.2,
+      w: 12.1,
+      h: 5.4,
+      fontSize: 11,
+      fontFace: 'Aptos',
+      color: '1A1A1A',
+      valign: 'top',
+    }
+  );
 
   const close = pptx.addSlide();
   close.background = { color: 'FFFFFF' };
@@ -1431,7 +1498,14 @@ export async function generatePDFReport(data: ReportData): Promise<Buffer> {
       doc.font(headingFont).fontSize(11).fillColor(headingColor).text(row.category, 50 + badgeWidth + 10, y, { lineBreak: false });
       doc.y = y + 18;
       addText(row.reasons.join(' · '));
-      if (row.source) addText(`Bron: ${row.source}`);
+      if (row.source) addText(`Gegevens: ${row.source}`);
+      if (row.legal?.urlArtikel) {
+        doc.font(bodyFont).fontSize(10).fillColor('#0563C1').text(`Bron (artikel): ${row.legal.bronLabel}`, {
+          link: row.legal.urlArtikel,
+          underline: true,
+        });
+        doc.moveDown(0.15);
+      }
       if (row.needed) addText(row.needed);
     });
     addText(`${legislation.disclaimer} · peildatum ${legislation.referenceDate}`);
@@ -1501,7 +1575,16 @@ export async function generatePDFReport(data: ReportData): Promise<Buffer> {
     doc.addPage();
     addHeading('9. Bronnenlijst', 18);
     if (!bronnen.length) addText('Geen bronnen beschikbaar.');
-    else bronnen.forEach((url: string) => addBullet(url));
+    else {
+      bronnen.forEach((url: string) => {
+        if (/^https?:\/\//i.test(url)) {
+          doc.font(bodyFont).fontSize(11).fillColor('#0563C1').text(`• ${url}`, { indent: 10, link: url, underline: true });
+          doc.moveDown(0.15);
+        } else {
+          addBullet(url);
+        }
+      });
+    }
 
     doc.addPage();
     addHeading('10. Disclaimer', 18);

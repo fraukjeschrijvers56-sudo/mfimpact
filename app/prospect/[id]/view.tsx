@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import MainLayout from '@/app/components/MainLayout';
-import { ESG_DISCLAIMER, ESG_REFERENCE_DATE } from '@/lib/esg-thresholds';
+import { ESG_DISCLAIMER } from '@/lib/esg-thresholds';
 import { assessLegislation } from '@/lib/legislation-status';
+import { WetgevingLegalLinks, EcgtLegalBanner } from '@/app/components/WetgevingLegalLinks';
+import { getLegalSourceDisplay } from '@/lib/wetgeving-bronnen';
 import { nl, isUnknown, labelize, hostOf, isUrl } from '@/lib/format';
 import { extractDisplayValue, getDisplayText } from '@/lib/field-normalizer';
 import {
@@ -252,7 +254,8 @@ export function ProspectView({ client }: { client: any }) {
           </Section>
           <Section title="Wetgeving & drempels (indicatief)" icon={<Scale className="w-5 h-5" />}>
             <p className="text-sm text-emerald-100/80 mb-1">MKB-categorie: <span className="font-semibold text-white">{nl(legislation.mkbCategory.category)}</span> ({nl(legislation.mkbCategory.reason)})</p>
-            <p className="text-sm font-semibold text-white mb-3">{legislation.summary}</p>
+            <WetgevingLegalLinks legal={getLegalSourceDisplay('mkb_categorie')} />
+            <p className="text-sm font-semibold text-white mb-3 mt-2">{legislation.summary}</p>
             <ul className="space-y-2">
               {legislation.items.map((t) => (
                 <li key={t.id} className="rounded-lg bg-emerald-900/40 border border-emerald-700/40 p-3">
@@ -266,7 +269,8 @@ export function ProspectView({ client }: { client: any }) {
                     </span>
                   </div>
                   <p className="text-sm text-emerald-50/90 mt-1">{t.reasons.join(' · ')}</p>
-                  {t.source && <p className="text-xs text-emerald-200/70 mt-1">Bron: {t.source}</p>}
+                  {t.source && <p className="text-xs text-emerald-200/70 mt-1">Gegevens: {t.source}</p>}
+                  <WetgevingLegalLinks legal={t.legal} />
                   {t.needed && <p className="text-sm text-amber-100 mt-1">{t.needed}</p>}
                 </li>
               ))}
@@ -339,6 +343,9 @@ export function ProspectView({ client }: { client: any }) {
         {/* CLAIMS */}
         <SectionWrapper clientId={client.id} section="claimcheck" sectionMetadata={sectionMetadata} refreshLabel="Claims">
           <Section id="claims" title="Duurzaamheidsclaims (ECGT / ACM)" icon={<Megaphone className="w-5 h-5" />} count={allClaims.length}>
+          <div className="mb-3">
+            <EcgtLegalBanner variant="dark" />
+          </div>
           {allClaims.length > 0 ? (
             <div className="space-y-3">
               {claims.map((c: any, i: number) => (

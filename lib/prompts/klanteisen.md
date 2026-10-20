@@ -20,7 +20,7 @@ Bepaal welke klanttypen {naam} heeft:
 - **Rijksoverheid & ZBO's** – ministeries, rijksdiensten, uitvoeringsorganisaties
 - **Infra/GWW/bouw** – Rijkswaterstaat, ProRail, provincies infra, gemeenten infra, waterschappen
 - **Gemeenten/provincies algemeen** – niet-infra opdrachten (facilitair, ICT, advies)
-- **Grote private klanten** – CSRD/CSDDD-plichtige ondernemingen (>250 FTE of omzet >€50M of internationaal)
+- **Grote private klanten** – CSRD-plichtige ondernemingen (>1000 FTE én omzet >€450 mln) of CSDDD-plichtig (>5000 FTE én omzet >€1,5 mrd) of internationaal
 - **Consumentenmarkt** – B2C, retail, e-commerce
 
 Als er GEEN expliciete klanten/referenties/projecten in het onderzoek staan: doe **targeted web search** (gebruik OpenAI web_search tool):
