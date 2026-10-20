@@ -13,6 +13,7 @@ import { ProspectActions } from './actions';
 import { MvoRegisterCard } from './mvo-register-card';
 import { KlanteisenSection } from './klanteisen-section';
 import { VersionHistory } from './version-history';
+import { SectionWrapper } from './section-wrapper';
 
 
 const VSME_TITLES: Record<string, string> = {
@@ -47,6 +48,13 @@ export function ProspectView({ client }: { client: any }) {
   const webbronnen: Array<{ url: string; title?: string }> = Array.isArray(dossier.onderzoek_webbronnen) ? dossier.onderzoek_webbronnen : [];
   const paginas: string[] = Array.isArray(dossier.website?.paginas) ? dossier.website.paginas : [];
   const ruleClaims: any[] = Array.isArray(dossier.claimcheck) ? dossier.claimcheck : [];
+
+  // Extract section metadata
+  let sectionMetadata: any = client.section_metadata;
+  if (typeof sectionMetadata === 'string') {
+    try { sectionMetadata = JSON.parse(sectionMetadata); } catch { sectionMetadata = {}; }
+  }
+  sectionMetadata = sectionMetadata || {};
 
   const profiel = onderzoek?.profiel || {};
   const vsme = onderzoek?.vsme_basic || onderzoek?.vsme || null;
@@ -183,9 +191,11 @@ export function ProspectView({ client }: { client: any }) {
         )}
 
         {/* PROFIEL */}
-        <Section id="profiel" title="Bedrijfsprofiel" icon={<Building2 className="w-5 h-5" />}>
-          {Object.keys(profiel).length > 0 ? <FieldGrid obj={profiel} cols={3} skip={['omzet', 'aantal_medewerkers', 'balanstotaal'].filter((k) => isUnknown(fieldValue(profiel[k])))} /> : <p className="text-slate-300 italic">Geen profiel uit het diepteonderzoek; zie de website-analyse hieronder.</p>}
-        </Section>
+        <SectionWrapper clientId={client.id} section="profiel" sectionMetadata={sectionMetadata} refreshLabel="Profiel vernieuwen">
+          <Section id="profiel" title="Bedrijfsprofiel" icon={<Building2 className="w-5 h-5" />}>
+            {Object.keys(profiel).length > 0 ? <FieldGrid obj={profiel} cols={3} skip={['omzet', 'aantal_medewerkers', 'balanstotaal'].filter((k) => isUnknown(fieldValue(profiel[k])))} /> : <p className="text-slate-300 italic">Geen profiel uit het diepteonderzoek. <button className="text-emerald-300 hover:text-white underline font-medium">Nu genereren</button></p>}
+          </Section>
+        </SectionWrapper>
 
         {/* BASIS (website-analyse) */}
         {basis && (
@@ -206,24 +216,26 @@ export function ProspectView({ client }: { client: any }) {
         )}
 
         {/* VSME */}
-        <Section id="vsme" title="VSME Basic B1–B11" icon={<ListChecks className="w-5 h-5" />} count={vsmeEntries.length}>
-          {vsmeEntries.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {vsmeEntries.map(([code, v]: any) => (
-                <div key={code} className="rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-3">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <p className="font-semibold text-white"><span className="text-emerald-300">{code}</span> {v?.titel || VSME_TITLES[code] || ''}</p>
-                    <Badge value={v?.status} />
+        <SectionWrapper clientId={client.id} section="vsme" sectionMetadata={sectionMetadata} refreshLabel="VSME vernieuwen">
+          <Section id="vsme" title="VSME Basic B1–B11" icon={<ListChecks className="w-5 h-5" />} count={vsmeEntries.length}>
+            {vsmeEntries.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {vsmeEntries.map(([code, v]: any) => (
+                  <div key={code} className="rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="font-semibold text-white"><span className="text-emerald-300">{code}</span> {v?.titel || VSME_TITLES[code] || ''}</p>
+                      <Badge value={v?.status} />
+                    </div>
+                    {v && typeof v === 'object' ? <>
+                      <p className="text-sm text-emerald-50/95"><Waarde v={v.samenvatting ?? v.waarde} /></p>
+                      <Bronnen bronnen={v.bronnen} />
+                    </> : <Waarde v={v} />}
                   </div>
-                  {v && typeof v === 'object' ? <>
-                    <p className="text-sm text-emerald-50/95"><Waarde v={v.samenvatting ?? v.waarde} /></p>
-                    <Bronnen bronnen={v.bronnen} />
-                  </> : <Waarde v={v} />}
-                </div>
-              ))}
-            </div>
-          ) : <p className="text-slate-300 italic">onbekend</p>}
-        </Section>
+                ))}
+              </div>
+            ) : <p className="text-slate-300 italic">onbekend. <button className="text-emerald-300 hover:text-white underline font-medium">Nu genereren</button></p>}
+          </Section>
+        </SectionWrapper>
 
         {/* KETENRISICO + WETGEVING */}
         <div id="ketenrisico" className="grid grid-cols-1 xl:grid-cols-2 gap-6 scroll-mt-24">
@@ -255,59 +267,62 @@ export function ProspectView({ client }: { client: any }) {
         )}
 
         {/* CERTIFICATEN */}
-        <Section id="certificaten" title="Certificaten & keurmerken" icon={<Award className="w-5 h-5" />} count={certificaten.length}>
-          {certificaten.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-              {certificaten.map((c: any, i: number) => {
-                // Support both old and new field names
-                const naam = c.naam ?? c.waarde;
-                const niveau = c.niveau_of_score ?? c.niveau;
-                const geldigTot = c.geldig_tot;
-                const platform = c.platform;
-                const verificatie = c.verificatie; // 'register' | 'zelf_gepubliceerd'
-                const status = c.status; // 'gevonden' | 'niet_gevonden_in_register'
-                const oudGeverifieerd = c.geverifieerd_in_register; // backwards compatibility
-                
-                // Determine verification badge
-                let verificationBadge = null;
-                if (verificatie === 'register' || oudGeverifieerd === 'ja') {
-                  verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-900/60 text-green-200 border border-green-600/50">in register geverifieerd</span>;
-                } else if (verificatie === 'zelf_gepubliceerd') {
-                  verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-900/60 text-amber-200 border border-amber-600/50">zelf gepubliceerd, niet geverifieerd</span>;
-                } else if (status === 'niet_gevonden_in_register') {
-                  verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-slate-400">niet gevonden in register</span>;
-                } else if (oudGeverifieerd === 'nee') {
-                  verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-slate-400">niet geverifieerd</span>;
-                }
-                
-                return (
-                  <div key={i} className="rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-3">
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <p className="font-semibold text-white">{nl(naam)}</p>
-                          {platform && <p className="text-xs text-emerald-200/70">{platform}</p>}
+        <SectionWrapper clientId={client.id} section="certificaten" sectionMetadata={sectionMetadata} refreshLabel="Certificaten vernieuwen">
+          <Section id="certificaten" title="Certificaten & keurmerken" icon={<Award className="w-5 h-5" />} count={certificaten.length}>
+            {certificaten.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {certificaten.map((c: any, i: number) => {
+                  // Support both old and new field names
+                  const naam = c.naam ?? c.waarde;
+                  const niveau = c.niveau_of_score ?? c.niveau;
+                  const geldigTot = c.geldig_tot;
+                  const platform = c.platform;
+                  const verificatie = c.verificatie; // 'register' | 'zelf_gepubliceerd'
+                  const status = c.status; // 'gevonden' | 'niet_gevonden_in_register'
+                  const oudGeverifieerd = c.geverifieerd_in_register; // backwards compatibility
+                  
+                  // Determine verification badge
+                  let verificationBadge = null;
+                  if (verificatie === 'register' || oudGeverifieerd === 'ja') {
+                    verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-900/60 text-green-200 border border-green-600/50">in register geverifieerd</span>;
+                  } else if (verificatie === 'zelf_gepubliceerd') {
+                    verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-900/60 text-amber-200 border border-amber-600/50">zelf gepubliceerd, niet geverifieerd</span>;
+                  } else if (status === 'niet_gevonden_in_register') {
+                    verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-slate-400">niet gevonden in register</span>;
+                  } else if (oudGeverifieerd === 'nee') {
+                    verificationBadge = <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-slate-400">niet geverifieerd</span>;
+                  }
+                  
+                  return (
+                    <div key={i} className="rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-3">
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <p className="font-semibold text-white">{nl(naam)}</p>
+                            {platform && <p className="text-xs text-emerald-200/70">{platform}</p>}
+                          </div>
+                          {verificationBadge}
                         </div>
-                        {verificationBadge}
+                        {(niveau || geldigTot) && (
+                          <p className="text-sm text-emerald-50/90">
+                            {niveau && <>Niveau: {nl(niveau)}</>}
+                            {niveau && geldigTot && <> · </>}
+                            {geldigTot && <>Geldig tot: {nl(geldigTot)}</>}
+                          </p>
+                        )}
+                        <Bronnen bronnen={c.bronnen} />
                       </div>
-                      {(niveau || geldigTot) && (
-                        <p className="text-sm text-emerald-50/90">
-                          {niveau && <>Niveau: {nl(niveau)}</>}
-                          {niveau && geldigTot && <> · </>}
-                          {geldigTot && <>Geldig tot: {nl(geldigTot)}</>}
-                        </p>
-                      )}
-                      <Bronnen bronnen={c.bronnen} />
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : basis?.certificaten?.length ? <Waarde v={basis.certificaten} /> : <p className="text-slate-300 italic">Geen certificaten gevonden.</p>}
-        </Section>
+                  );
+                })}
+              </div>
+            ) : basis?.certificaten?.length ? <Waarde v={basis.certificaten} /> : <p className="text-slate-300 italic">Geen certificaten gevonden. <button className="text-emerald-300 hover:text-white underline font-medium">Nu genereren</button></p>}
+          </Section>
+        </SectionWrapper>
 
         {/* CLAIMS */}
-        <Section id="claims" title="Duurzaamheidsclaims (ECGT / ACM)" icon={<Megaphone className="w-5 h-5" />} count={allClaims.length}>
+        <SectionWrapper clientId={client.id} section="claimcheck" sectionMetadata={sectionMetadata} refreshLabel="Claims vernieuwen">
+          <Section id="claims" title="Duurzaamheidsclaims (ECGT / ACM)" icon={<Megaphone className="w-5 h-5" />} count={allClaims.length}>
           {allClaims.length > 0 ? (
             <div className="space-y-3">
               {claims.map((c: any, i: number) => (
@@ -335,26 +350,29 @@ export function ProspectView({ client }: { client: any }) {
                 </div>
               ))}
             </div>
-          ) : <p className="text-slate-300 italic">Geen milieu- of duurzaamheidsclaims gevonden.</p>}
-        </Section>
+          ) : <p className="text-slate-300 italic">Geen milieu- of duurzaamheidsclaims gevonden. <button className="text-emerald-300 hover:text-white underline font-medium">Nu genereren</button></p>}
+          </Section>
+        </SectionWrapper>
 
         {/* GATEN */}
-        <Section id="gaten" title="Gaten en bewijsacties" icon={<AlertOctagon className="w-5 h-5" />} count={gaten.length}>
-          {gaten.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {[...gaten].sort((a, b) => ['hoog', 'middel', 'laag'].indexOf(String(a.prioriteit).toLowerCase()) - ['hoog', 'middel', 'laag'].indexOf(String(b.prioriteit).toLowerCase())).map((g: any, i: number) => (
-                <div key={i} className="rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-4">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <p className="font-semibold text-white">{nl(g.onderdeel ?? g.naam)}</p>
-                    <Badge value={g.prioriteit} />
+        <SectionWrapper clientId={client.id} section="vsme" sectionMetadata={sectionMetadata} refreshLabel="Gaten vernieuwen">
+          <Section id="gaten" title="Gaten en bewijsacties" icon={<AlertOctagon className="w-5 h-5" />} count={gaten.length}>
+            {gaten.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[...gaten].sort((a, b) => ['hoog', 'middel', 'laag'].indexOf(String(a.prioriteit).toLowerCase()) - ['hoog', 'middel', 'laag'].indexOf(String(b.prioriteit).toLowerCase())).map((g: any, i: number) => (
+                  <div key={i} className="rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-4">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="font-semibold text-white">{nl(g.onderdeel ?? g.naam)}</p>
+                      <Badge value={g.prioriteit} />
+                    </div>
+                    {!isUnknown(g.waarom) && <p className="text-sm text-emerald-50/90">{nl(g.waarom)}</p>}
+                    {!isUnknown(g.bewijsactie) && <p className="text-sm mt-2 rounded-lg bg-emerald-800/60 p-2"><span className="font-semibold text-emerald-300">Bewijsactie: </span>{nl(g.bewijsactie)}</p>}
                   </div>
-                  {!isUnknown(g.waarom) && <p className="text-sm text-emerald-50/90">{nl(g.waarom)}</p>}
-                  {!isUnknown(g.bewijsactie) && <p className="text-sm mt-2 rounded-lg bg-emerald-800/60 p-2"><span className="font-semibold text-emerald-300">Bewijsactie: </span>{nl(g.bewijsactie)}</p>}
-                </div>
-              ))}
-            </div>
-          ) : <p className="text-slate-300 italic">onbekend</p>}
-        </Section>
+                ))}
+              </div>
+            ) : <p className="text-slate-300 italic">onbekend. <button className="text-emerald-300 hover:text-white underline font-medium">Nu genereren</button></p>}
+          </Section>
+        </SectionWrapper>
 
         {/* NIEUWS + TENDERS */}
         <div id="nieuws" className="grid grid-cols-1 xl:grid-cols-2 gap-6 scroll-mt-24">
@@ -371,19 +389,21 @@ export function ProspectView({ client }: { client: any }) {
               </ul>
             ) : <p className="text-slate-300 italic">Geen nieuws gevonden.</p>}
           </Section>
-          <Section title="Tenders & projecten" icon={<Briefcase className="w-5 h-5" />} count={tenders.length}>
-            {tenders.length > 0 ? (
-              <ul className="space-y-3">
-                {tenders.map((t: any, i: number) => (
-                  <li key={i} className="rounded-lg bg-emerald-900/40 border border-emerald-700/40 p-3">
-                    <p className="font-semibold text-white">{nl(t.titel ?? t.naam)}</p>
-                    <p className="text-sm text-emerald-50/90">Opdrachtgever: {nl(t.opdrachtgever)} · {nl(t.datum)}</p>
-                    {isUrl(t.url) && <p className="text-xs mt-1"><SourceLink url={t.url} /></p>}
-                  </li>
-                ))}
-              </ul>
-            ) : <p className="text-slate-300 italic">Geen tenders of projecten gevonden.</p>}
-          </Section>
+          <SectionWrapper clientId={client.id} section="tenders" sectionMetadata={sectionMetadata} refreshLabel="Tenders vernieuwen">
+            <Section title="Tenders & projecten" icon={<Briefcase className="w-5 h-5" />} count={tenders.length}>
+              {tenders.length > 0 ? (
+                <ul className="space-y-3">
+                  {tenders.map((t: any, i: number) => (
+                    <li key={i} className="rounded-lg bg-emerald-900/40 border border-emerald-700/40 p-3">
+                      <p className="font-semibold text-white">{nl(t.titel ?? t.naam)}</p>
+                      <p className="text-sm text-emerald-50/90">Opdrachtgever: {nl(t.opdrachtgever)} · {nl(t.datum)}</p>
+                      {isUrl(t.url) && <p className="text-xs mt-1"><SourceLink url={t.url} /></p>}
+                    </li>
+                  ))}
+                </ul>
+              ) : <p className="text-slate-300 italic">Geen tenders of projecten gevonden. <button className="text-emerald-300 hover:text-white underline font-medium">Nu genereren</button></p>}
+            </Section>
+          </SectionWrapper>
         </div>
 
         {/* PERSONEN */}

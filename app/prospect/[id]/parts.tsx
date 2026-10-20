@@ -81,7 +81,7 @@ export function Bronnen({ bronnen }: { bronnen: any }) {
 }
 
 /** Render a waarde which might be text, number, list, field object, or nested object */
-export function Waarde({ v }: { v: unknown }) {
+export function Waarde({ v, edited }: { v: unknown; edited?: boolean }) {
   // Parse if it's a JSON string
   const parsed = parseFieldValue(v);
   
@@ -95,10 +95,15 @@ export function Waarde({ v }: { v: unknown }) {
     return (
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <Waarde v={displayValue} />
+          <Waarde v={displayValue} edited={edited} />
           {status && status !== 'onbekend' && (
             <span className="inline-block text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-700/60 text-emerald-100">
               {humanizeKey(status)}
+            </span>
+          )}
+          {edited && (
+            <span className="inline-block text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-sky-600/80 text-sky-100">
+              aangepast
             </span>
           )}
         </div>
@@ -136,7 +141,16 @@ export function Waarde({ v }: { v: unknown }) {
   
   if (typeof parsed === 'object' && parsed !== null) return <Generic value={parsed} />;
   if (isUrl(parsed)) return <SourceLink url={parsed} label={parsed} />;
-  return <span className="text-white whitespace-pre-line">{nl(parsed)}</span>;
+  return (
+    <span className="inline-flex items-center gap-2 flex-wrap">
+      <span className="text-white whitespace-pre-line">{nl(parsed)}</span>
+      {edited && (
+        <span className="inline-block text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-sky-600/80 text-sky-100">
+          aangepast
+        </span>
+      )}
+    </span>
+  );
 }
 
 /** A labelled field with status and sources */

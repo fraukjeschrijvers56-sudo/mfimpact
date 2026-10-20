@@ -69,56 +69,30 @@ export async function POST(
     // Create job for tracking
     const jobId = await createSectionJob(parseInt(id), sectionName);
 
-    // Start async processing
-    // Try to use unstable_after if available (Next.js 15+), otherwise process synchronously
-    try {
-      const nextServer = await import('next/server');
-      const unstable_after = (nextServer as any).unstable_after;
-      
-      if (typeof unstable_after === 'function') {
-        // Return immediately with jobId, processing continues in background
-        const response = NextResponse.json({
-          success: true,
-          jobId,
-          status: 'queued',
-          message: 'Section refresh started',
-        });
-
-        unstable_after(async () => {
-          await processSectionAsync(
-            parseInt(id),
-            sectionName,
-            jobId,
-            dossier,
-            onderzoekRuw,
-            sectionMetadata,
-            editedFields
-          );
-        });
-
-        return response;
-      }
-    } catch (error) {
-      console.log('unstable_after not available, processing synchronously');
-    }
-
-    // Fallback: process synchronously
-    await processSectionAsync(
-      parseInt(id),
-      sectionName,
-      jobId,
-      dossier,
-      onderzoekRuw,
-      sectionMetadata,
-      editedFields
-    );
-
-    return NextResponse.json({
+    // Start async processing with stable after() from Next.js 16
+    const { after } = await import('next/server');
+    
+    // Return immediately with jobId, processing continues in background
+    const response = NextResponse.json({
       success: true,
       jobId,
-      status: 'done',
-      message: 'Section refresh completed',
+      status: 'queued',
+      message: 'Section refresh started',
     });
+
+    after(async () => {
+      await processSectionAsync(
+        parseInt(id),
+        sectionName,
+        jobId,
+        dossier,
+        onderzoekRuw,
+        sectionMetadata,
+        editedFields
+      );
+    });
+
+    return response;
   } catch (error) {
     console.error('Error starting section refresh:', error);
     return NextResponse.json(

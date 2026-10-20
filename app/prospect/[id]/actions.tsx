@@ -46,7 +46,7 @@ export function ProspectActions({ client }: { client: any }) {
     }
   };
 
-  const reAnalyze = () => {
+  const reAnalyze = async () => {
     if (!client.website_url || !client.plaats) {
       alert('Website-URL en plaats zijn vereist om volledig opnieuw te onderzoeken');
       return;
@@ -54,15 +54,27 @@ export function ProspectActions({ client }: { client: any }) {
 
     if (
       !confirm(
-        `VOLLEDIG opnieuw onderzoeken voor ${client.naam}?\n\nDit kan enkele minuten duren en overschrijft het huidige dossier (behalve handmatig aangepaste velden).\n\nTip: gebruik de '↻ Vernieuw' knoppen per sectie voor snellere updates van specifieke onderdelen.`
+        `VOLLEDIG opnieuw onderzoeken voor ${client.naam}?\n\nDit start een volledige analyse met alle secties (web onderzoek → profiel → VSME → certificaten → claimcheck → klanteisen → tenders).\n\nDe huidige versie wordt bewaard. Dit kan enkele minuten duren.\n\nTip: gebruik de '↻ Vernieuw' knoppen per sectie voor snellere updates van specifieke onderdelen.`
       )
     ) {
       return;
     }
 
-    router.push(
-      `/?reanalyze=${client.id}&url=${encodeURIComponent(client.website_url)}&city=${encodeURIComponent(client.plaats)}`
-    );
+    try {
+      const response = await fetch(`/api/clients/${client.id}/rerun`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to start full rerun');
+      }
+
+      const data = await response.json();
+      alert(`Volledig heronderzoek gestart! ${data.sections.length} secties worden nu verwerkt. Vernieuw de pagina over enkele minuten.`);
+      router.refresh();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to start full rerun');
+    }
   };
 
   return (

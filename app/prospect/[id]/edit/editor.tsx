@@ -74,14 +74,72 @@ export function ProspectEditor({ client }: { client: any }) {
   const saveChanges = async () => {
     setSaving(true);
     try {
-      // Preserve field object structure if it exists
-      const updateFieldValue = (original: any, newValue: string) => {
-        const fieldObj = normalizeFieldObject(original);
-        return {
-          ...fieldObj,
-          waarde: newValue || fieldObj.waarde,
-        };
-      };
+      // Track edited field paths
+      const editedFields: string[] = [];
+      
+      // Check if basic fields changed
+      if (naam !== String(extractDisplayValue(client.naam) || '')) {
+        editedFields.push('naam');
+      }
+      if (website !== String(extractDisplayValue(client.website_url) || '')) {
+        editedFields.push('website_url');
+      }
+      if (plaats !== String(extractDisplayValue(client.plaats) || '')) {
+        editedFields.push('plaats');
+      }
+      if (sector !== String(extractDisplayValue(client.sector) || '')) {
+        editedFields.push('sector');
+      }
+      if (kvk !== String(extractDisplayValue(client.kvk) || '')) {
+        editedFields.push('kvk');
+      }
+      
+      // Check if onderzoek fields changed
+      if (samenvatting !== String(extractDisplayValue(onderzoek.samenvatting) || '')) {
+        editedFields.push('onderzoek.samenvatting');
+      }
+      
+      // Check array fields - mark as edited if length or content changed
+      const originalPersonen = Array.isArray(onderzoek.personen) ? onderzoek.personen : [];
+      if (JSON.stringify(personen) !== JSON.stringify(originalPersonen)) {
+        editedFields.push('onderzoek.personen');
+      }
+      
+      const originalCertificaten = Array.isArray(onderzoek.certificaten) ? onderzoek.certificaten : [];
+      if (JSON.stringify(certificaten) !== JSON.stringify(originalCertificaten)) {
+        editedFields.push('onderzoek.certificaten');
+      }
+      
+      const originalNieuws = Array.isArray(onderzoek.nieuws) ? onderzoek.nieuws : [];
+      if (JSON.stringify(nieuws) !== JSON.stringify(originalNieuws)) {
+        editedFields.push('onderzoek.nieuws');
+      }
+      
+      const originalGaten = Array.isArray(onderzoek.gaten) ? onderzoek.gaten : [];
+      if (JSON.stringify(gaten) !== JSON.stringify(originalGaten)) {
+        editedFields.push('onderzoek.gaten');
+      }
+      
+      const originalClaims = Array.isArray(onderzoek.claims) ? onderzoek.claims : [];
+      if (JSON.stringify(claims) !== JSON.stringify(originalClaims)) {
+        editedFields.push('onderzoek.claims');
+      }
+      
+      const originalKansen = Array.isArray(onderzoek.kansen_gesprek) ? onderzoek.kansen_gesprek : [];
+      if (JSON.stringify(kansen) !== JSON.stringify(originalKansen)) {
+        editedFields.push('onderzoek.kansen_gesprek');
+      }
+
+      // Merge with existing edited_fields
+      let existingEditedFields: string[] = client.edited_fields || [];
+      if (typeof existingEditedFields === 'string') {
+        try {
+          existingEditedFields = JSON.parse(existingEditedFields);
+        } catch {
+          existingEditedFields = [];
+        }
+      }
+      const allEditedFields = Array.from(new Set([...existingEditedFields, ...editedFields]));
 
       const updatedDossier = normalizeDossier({
         ...dossier,
@@ -108,6 +166,7 @@ export function ProspectEditor({ client }: { client: any }) {
           sector,
           kvk,
           dossier: updatedDossier,
+          edited_fields: allEditedFields,
         }),
       });
 
