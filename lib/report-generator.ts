@@ -27,6 +27,11 @@ interface HuisstijlSettings {
   primary_color: string;
   secondary_color: string;
   font: string;
+  heading_color?: string;
+  table_shade?: string;
+  status_red?: string;
+  status_amber?: string;
+  status_green?: string;
 }
 interface ReportData {
   client: any;
@@ -75,7 +80,9 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
   const bronnen = Array.isArray(onderzoek.doorzochte_bronnen) ? onderzoek.doorzochte_bronnen : [];
   const mvoRegister = dossier.mvo_register || null;
   const primaryColor = hexToRgb(huisstijl.primary_color);
+  const headingColor = hexToRgb(huisstijl.heading_color || huisstijl.secondary_color);
   const font = huisstijl.font === 'Aptos' ? 'Aptos' : huisstijl.font;
+  const headingFont = huisstijl.font === 'Aptos' ? 'Aptos Display' : huisstijl.font;
   const doc = new Document({
     sections: [
       {
@@ -125,11 +132,32 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           // Voorblad
           new Paragraph({
             text: '',
-            spacing: { before: 2000 },
+            spacing: { before: 1000 },
+          }),
+          // TODO: Add MF Impact logo image here
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'MF IMPACT',
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
           }),
           new Paragraph({
-            text: 'MVO-bewijsdossier',
-            heading: HeadingLevel.TITLE,
+            children: [
+              new TextRun({
+                text: 'MVO-bewijsdossier',
+                font: headingFont,
+                size: 44,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
             alignment: AlignmentType.CENTER,
             spacing: { after: 400 },
           }),
@@ -167,8 +195,15 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           }),
           // 1. Managementsamenvatting
           new Paragraph({
-            text: '1. Managementsamenvatting',
-            heading: HeadingLevel.HEADING_1,
+            children: [
+              new TextRun({
+                text: '1. Managementsamenvatting',
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
             spacing: { before: 400, after: 200 },
           }),
           ...generateManagementSamenvatting(klanteisen, gaten, onderzoek),
@@ -177,8 +212,15 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           }),
           // 2. Bedrijfsprofiel
           new Paragraph({
-            text: '2. Bedrijfsprofiel',
-            heading: HeadingLevel.HEADING_1,
+            children: [
+              new TextRun({
+                text: '2. Bedrijfsprofiel',
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
             spacing: { before: 400, after: 200 },
           }),
           ...generateBedrijfsprofiel(profiel, client),
@@ -187,8 +229,15 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           }),
           // 3. Wat uw klanten gaan vragen
           new Paragraph({
-            text: '3. Wat uw klanten gaan vragen',
-            heading: HeadingLevel.HEADING_1,
+            children: [
+              new TextRun({
+                text: '3. Wat uw klanten gaan vragen',
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
             spacing: { before: 400, after: 200 },
           }),
           ...generateKlanteisen(klanteisen),
@@ -197,8 +246,15 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           }),
           // 4. Scan & gatenanalyse VSME B1-B11
           new Paragraph({
-            text: '4. Scan & gatenanalyse VSME B1-B11',
-            heading: HeadingLevel.HEADING_1,
+            children: [
+              new TextRun({
+                text: '4. Scan & gatenanalyse VSME B1-B11',
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
             spacing: { before: 400, after: 200 },
           }),
           ...generateVSME(vsme),
@@ -207,8 +263,15 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           }),
           // 5. Certificaten & registers
           new Paragraph({
-            text: '5. Certificaten & registers',
-            heading: HeadingLevel.HEADING_1,
+            children: [
+              new TextRun({
+                text: '5. Certificaten & registers',
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
             spacing: { before: 400, after: 200 },
           }),
           ...generateCertificaten(certificaten, mvoRegister),
@@ -217,8 +280,15 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           }),
           // 6. Claimcheck
           new Paragraph({
-            text: '6. Claimcheck',
-            heading: HeadingLevel.HEADING_1,
+            children: [
+              new TextRun({
+                text: '6. Claimcheck',
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
             spacing: { before: 400, after: 200 },
           }),
           ...generateClaimcheck(claims),
@@ -227,8 +297,15 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           }),
           // 7. Aanknopingspunten voor het gesprek
           new Paragraph({
-            text: '7. Aanknopingspunten voor het gesprek',
-            heading: HeadingLevel.HEADING_1,
+            children: [
+              new TextRun({
+                text: '7. Aanknopingspunten voor het gesprek',
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
             spacing: { before: 400, after: 200 },
           }),
           ...generateGesprek(gesprek),
@@ -237,8 +314,15 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           }),
           // 8. Next steps
           new Paragraph({
-            text: '8. Next steps',
-            heading: HeadingLevel.HEADING_1,
+            children: [
+              new TextRun({
+                text: '8. Next steps',
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
             spacing: { before: 400, after: 200 },
           }),
           ...generateNextSteps(gesprek.next_steps || []),
@@ -247,8 +331,15 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           }),
           // 9. Bronnenlijst
           new Paragraph({
-            text: '9. Bronnenlijst',
-            heading: HeadingLevel.HEADING_1,
+            children: [
+              new TextRun({
+                text: '9. Bronnenlijst',
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
             spacing: { before: 400, after: 200 },
           }),
           ...generateBronnenlijst(bronnen),
@@ -257,8 +348,15 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           }),
           // 10. Disclaimer
           new Paragraph({
-            text: '10. Disclaimer',
-            heading: HeadingLevel.HEADING_1,
+            children: [
+              new TextRun({
+                text: '10. Disclaimer',
+                font: headingFont,
+                size: 32,
+                bold: true,
+                color: headingColor.r.toString(16).padStart(2, '0') + headingColor.g.toString(16).padStart(2, '0') + headingColor.b.toString(16).padStart(2, '0'),
+              }),
+            ],
             spacing: { before: 400, after: 200 },
           }),
           ...generateDisclaimer(),
@@ -787,8 +885,9 @@ export async function generatePDFReport(data: ReportData): Promise<Buffer> {
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    const primaryColor = huisstijl.primary_color;
-    const font = huisstijl.font === 'Aptos' ? 'Helvetica' : huisstijl.font === 'Inter' ? 'Helvetica' : huisstijl.font;
+  const primaryColor = huisstijl.primary_color;
+  const headingColor = huisstijl.heading_color || huisstijl.secondary_color;
+  const font = huisstijl.font === 'Aptos' ? 'Helvetica' : huisstijl.font === 'Inter' ? 'Helvetica' : huisstijl.font;
 
     // Helper functions
     const addTitle = (text: string, size = 24) => {
@@ -797,7 +896,7 @@ export async function generatePDFReport(data: ReportData): Promise<Buffer> {
     };
 
     const addHeading = (text: string, size = 16) => {
-      doc.font('Helvetica-Bold').fontSize(size).fillColor(primaryColor).text(text);
+      doc.font('Helvetica-Bold').fontSize(size).fillColor(headingColor).text(text);
       doc.moveDown(0.3);
     };
 

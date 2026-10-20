@@ -10,21 +10,31 @@ export default function InstellingenPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Huisstijl settings
-  const [primaryColor, setPrimaryColor] = useState('#10b981');
-  const [secondaryColor, setSecondaryColor] = useState('#3b82f6');
+  const [primaryColor, setPrimaryColor] = useState('#039088');
+  const [secondaryColor, setSecondaryColor] = useState('#0C4643');
+  const [headingColor, setHeadingColor] = useState('#0C4643');
+  const [tableShade, setTableShade] = useState('#F4F7F7');
+  const [statusRed, setStatusRed] = useState('#D64545');
+  const [statusAmber, setStatusAmber] = useState('#FFC14D');
+  const [statusGreen, setStatusGreen] = useState('#039088');
   const [font, setFont] = useState('Aptos');
   const [savingHuisstijl, setSavingHuisstijl] = useState(false);
   const [loadingHuisstijl, setLoadingHuisstijl] = useState(true);
 
   // Load huisstijl settings on mount
   useEffect(() => {
-    const loadHuisstijl = async () => {
+      const loadHuisstijl = async () => {
       try {
         const res = await fetch('/api/settings/huisstijl');
         if (res.ok) {
           const data = await res.json();
           setPrimaryColor(data.primary_color);
           setSecondaryColor(data.secondary_color);
+          setHeadingColor(data.heading_color || data.secondary_color);
+          setTableShade(data.table_shade || '#F4F7F7');
+          setStatusRed(data.status_red || '#D64545');
+          setStatusAmber(data.status_amber || '#FFC14D');
+          setStatusGreen(data.status_green || data.primary_color);
           setFont(data.font);
         }
       } catch (error) {
@@ -101,6 +111,11 @@ export default function InstellingenPage() {
         body: JSON.stringify({
           primary_color: primaryColor,
           secondary_color: secondaryColor,
+          heading_color: headingColor,
+          table_shade: tableShade,
+          status_red: statusRed,
+          status_amber: statusAmber,
+          status_green: statusGreen,
           font,
         }),
       });
@@ -230,7 +245,7 @@ export default function InstellingenPage() {
                 {/* Secondary Color */}
                 <div>
                   <label className="block text-sm font-semibold text-white mb-2">
-                    Secundaire kleur
+                    Secundaire kleur (accent)
                   </label>
                   <div className="flex items-center gap-3">
                     <input
@@ -243,9 +258,111 @@ export default function InstellingenPage() {
                       type="text"
                       value={secondaryColor}
                       onChange={(e) => setSecondaryColor(e.target.value)}
-                      placeholder="#3b82f6"
+                      placeholder="#0C4643"
                       className="flex-1 px-3 py-2 rounded-lg bg-emerald-950/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none font-mono"
                     />
+                  </div>
+                </div>
+
+                {/* Heading Color */}
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">
+                    Koppenkleur (headings in rapport)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={headingColor}
+                      onChange={(e) => setHeadingColor(e.target.value)}
+                      className="w-16 h-10 rounded border-2 border-emerald-600/40 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={headingColor}
+                      onChange={(e) => setHeadingColor(e.target.value)}
+                      placeholder="#0C4643"
+                      className="flex-1 px-3 py-2 rounded-lg bg-emerald-950/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Table Shade */}
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">
+                    Tabelschaduw (row shading)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={tableShade}
+                      onChange={(e) => setTableShade(e.target.value)}
+                      className="w-16 h-10 rounded border-2 border-emerald-600/40 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={tableShade}
+                      onChange={(e) => setTableShade(e.target.value)}
+                      placeholder="#F4F7F7"
+                      className="flex-1 px-3 py-2 rounded-lg bg-emerald-950/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Status Colors */}
+                <div className="md:col-span-2">
+                  <p className="text-sm font-semibold text-white mb-3">Statuskleuren (kick-out/partial/in orde)</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs text-emerald-200 mb-1">Rood (kick-out/gap)</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={statusRed}
+                          onChange={(e) => setStatusRed(e.target.value)}
+                          className="w-12 h-8 rounded border border-emerald-600/40 cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={statusRed}
+                          onChange={(e) => setStatusRed(e.target.value)}
+                          className="flex-1 px-2 py-1 text-sm rounded bg-emerald-950/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-emerald-200 mb-1">Amber (partial/advantage)</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={statusAmber}
+                          onChange={(e) => setStatusAmber(e.target.value)}
+                          className="w-12 h-8 rounded border border-emerald-600/40 cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={statusAmber}
+                          onChange={(e) => setStatusAmber(e.target.value)}
+                          className="flex-1 px-2 py-1 text-sm rounded bg-emerald-950/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-emerald-200 mb-1">Groen (in orde)</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={statusGreen}
+                          onChange={(e) => setStatusGreen(e.target.value)}
+                          className="w-12 h-8 rounded border border-emerald-600/40 cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={statusGreen}
+                          onChange={(e) => setStatusGreen(e.target.value)}
+                          className="flex-1 px-2 py-1 text-sm rounded bg-emerald-950/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none font-mono"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -267,16 +384,27 @@ export default function InstellingenPage() {
                 </div>
 
                 {/* Preview */}
-                <div className="p-4 rounded-lg bg-white">
+                <div className="md:col-span-2 p-4 rounded-lg bg-white">
+                  <p className="text-lg font-bold mb-2" style={{ color: headingColor, fontFamily: font === 'Aptos' ? 'Aptos Display, Arial, sans-serif' : font }}>
+                    Heading voorbeeld (koppenkleur)
+                  </p>
                   <p className="text-sm font-semibold mb-2" style={{ color: primaryColor }}>
-                    Primaire kleur voorbeeld
+                    Primaire kleur (teal accent)
                   </p>
-                  <p className="text-sm font-semibold mb-2" style={{ color: secondaryColor }}>
-                    Secundaire kleur voorbeeld
+                  <p className="text-sm mb-2" style={{ fontFamily: font === 'Aptos' ? 'Aptos, Calibri, sans-serif' : font }}>
+                    Body text voorbeeld met {font} lettertype
                   </p>
-                  <p className="text-sm" style={{ fontFamily: font === 'Aptos' ? 'Aptos, Calibri, sans-serif' : font }}>
-                    Lettertype: {font}
-                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <div className="px-3 py-1 rounded text-xs font-bold text-white" style={{ backgroundColor: statusRed }}>
+                      KICK-OUT
+                    </div>
+                    <div className="px-3 py-1 rounded text-xs font-bold text-white" style={{ backgroundColor: statusAmber }}>
+                      VOORDEEL
+                    </div>
+                    <div className="px-3 py-1 rounded text-xs font-bold text-white" style={{ backgroundColor: statusGreen }}>
+                      ✓ AANWEZIG
+                    </div>
+                  </div>
                 </div>
 
                 {/* Save Button */}

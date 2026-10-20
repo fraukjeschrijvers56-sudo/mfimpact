@@ -8,12 +8,22 @@ interface HuisstijlSettings {
   primary_color: string;
   secondary_color: string;
   font: string;
+  heading_color?: string;
+  table_shade?: string;
+  status_red?: string;
+  status_amber?: string;
+  status_green?: string;
 }
 
 const DEFAULT_SETTINGS: HuisstijlSettings = {
-  primary_color: '#10b981', // emerald-500 from Tailwind
-  secondary_color: '#3b82f6', // blue-500 from Tailwind
+  primary_color: '#039088', // MF Impact teal
+  secondary_color: '#0C4643', // MF Impact dark green (headings, text accents)
   font: 'Aptos',
+  heading_color: '#0C4643', // Dark green for headings
+  table_shade: '#F4F7F7', // Light grey for table row shading
+  status_red: '#D64545', // Red for kick-out/gap
+  status_amber: '#FFC14D', // Amber for partial/advantage
+  status_green: '#039088', // Teal for in order
 };
 
 /**
