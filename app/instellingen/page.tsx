@@ -1,13 +1,40 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import MainLayout from '@/app/components/MainLayout';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Palette } from 'lucide-react';
 
 export default function InstellingenPage() {
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Huisstijl settings
+  const [primaryColor, setPrimaryColor] = useState('#10b981');
+  const [secondaryColor, setSecondaryColor] = useState('#3b82f6');
+  const [font, setFont] = useState('Aptos');
+  const [savingHuisstijl, setSavingHuisstijl] = useState(false);
+  const [loadingHuisstijl, setLoadingHuisstijl] = useState(true);
+
+  // Load huisstijl settings on mount
+  useEffect(() => {
+    const loadHuisstijl = async () => {
+      try {
+        const res = await fetch('/api/settings/huisstijl');
+        if (res.ok) {
+          const data = await res.json();
+          setPrimaryColor(data.primary_color);
+          setSecondaryColor(data.secondary_color);
+          setFont(data.font);
+        }
+      } catch (error) {
+        console.error('Laden huisstijl mislukt:', error);
+      } finally {
+        setLoadingHuisstijl(false);
+      }
+    };
+    loadHuisstijl();
+  }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,6 +89,32 @@ export default function InstellingenPage() {
       alert(error instanceof Error ? error.message : 'Verwijderen mislukt');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleSaveHuisstijl = async () => {
+    setSavingHuisstijl(true);
+    try {
+      const res = await fetch('/api/settings/huisstijl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          primary_color: primaryColor,
+          secondary_color: secondaryColor,
+          font,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Opslaan mislukt');
+      }
+
+      alert('Huisstijl succesvol opgeslagen');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Opslaan mislukt');
+    } finally {
+      setSavingHuisstijl(false);
     }
   };
 
@@ -138,11 +191,104 @@ export default function InstellingenPage() {
             </div>
           </div>
 
-          {/* Future settings sections can go here */}
-          <div className="mt-6 p-4 rounded-lg bg-emerald-900/20 border border-emerald-700/30">
-            <p className="text-sm text-emerald-200/70 italic">
-              Meer instellingen worden in de toekomst toegevoegd.
+          {/* Huisstijl Section */}
+          <div className="mt-6 rounded-xl bg-emerald-900/40 border border-emerald-700/40 p-5">
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Palette className="w-5 h-5" />
+              Huisstijl
+            </h2>
+            <p className="text-sm text-emerald-100/80 mb-4">
+              Stel kleuren en lettertype in voor rapporten (Word, PowerPoint).
             </p>
+
+            {loadingHuisstijl ? (
+              <p className="text-sm text-emerald-200/70">Laden...</p>
+            ) : (
+              <div className="space-y-4">
+                {/* Primary Color */}
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">
+                    Primaire kleur
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="w-16 h-10 rounded border-2 border-emerald-600/40 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      placeholder="#10b981"
+                      className="flex-1 px-3 py-2 rounded-lg bg-emerald-950/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Secondary Color */}
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">
+                    Secundaire kleur
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={secondaryColor}
+                      onChange={(e) => setSecondaryColor(e.target.value)}
+                      className="w-16 h-10 rounded border-2 border-emerald-600/40 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={secondaryColor}
+                      onChange={(e) => setSecondaryColor(e.target.value)}
+                      placeholder="#3b82f6"
+                      className="flex-1 px-3 py-2 rounded-lg bg-emerald-950/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Font */}
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">
+                    Lettertype
+                  </label>
+                  <select
+                    value={font}
+                    onChange={(e) => setFont(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-emerald-950/60 text-white border border-emerald-700/50 focus:border-emerald-500 focus:outline-none"
+                  >
+                    <option value="Aptos">Aptos (met Calibri fallback)</option>
+                    <option value="Calibri">Calibri</option>
+                    <option value="Inter">Inter</option>
+                    <option value="Arial">Arial</option>
+                  </select>
+                </div>
+
+                {/* Preview */}
+                <div className="p-4 rounded-lg bg-white">
+                  <p className="text-sm font-semibold mb-2" style={{ color: primaryColor }}>
+                    Primaire kleur voorbeeld
+                  </p>
+                  <p className="text-sm font-semibold mb-2" style={{ color: secondaryColor }}>
+                    Secundaire kleur voorbeeld
+                  </p>
+                  <p className="text-sm" style={{ fontFamily: font === 'Aptos' ? 'Aptos, Calibri, sans-serif' : font }}>
+                    Lettertype: {font}
+                  </p>
+                </div>
+
+                {/* Save Button */}
+                <button
+                  onClick={handleSaveHuisstijl}
+                  disabled={savingHuisstijl}
+                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50 font-medium"
+                >
+                  {savingHuisstijl ? 'Opslaan...' : 'Huisstijl opslaan'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

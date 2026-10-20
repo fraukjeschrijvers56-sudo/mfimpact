@@ -239,6 +239,31 @@ async function processSectionAsync(
           break;
         }
 
+        case 'gesprek': {
+          const { callSectionAI } = await import('@/lib/section-ai');
+          // Pass full onderzoek (profiel, klanteisen, vsme, gaten, certificaten) to gesprek
+          const result = await callSectionAI(
+            {
+              sectionName: 'gesprek',
+              promptFile: 'gesprek.md',
+              useWebSearch: false,
+              schemaKeys: ['agenda', 'aannames', 'vragen', 'next_steps'],
+            },
+            researchInput,
+            apiKey,
+            90000
+          );
+          
+          if (result.error || !result.data) {
+            throw new Error(result.error || 'Gesprek voorbereiden mislukt: geen data');
+          }
+          
+          newSectionData = {
+            gesprek: result.data,
+          };
+          break;
+        }
+
         case 'vsme': {
           const { callSectionAI } = await import('@/lib/section-ai');
           const result = await callSectionAI(

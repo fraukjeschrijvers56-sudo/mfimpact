@@ -8,6 +8,7 @@ export const SECTION_NAMES = [
   'claimcheck',
   'klanteisen',
   'tenders',
+  'gesprek',
 ] as const;
 
 export type SectionName = typeof SECTION_NAMES[number];
@@ -20,6 +21,7 @@ const PROMPT_VERSIONS: Record<SectionName, string> = {
   claimcheck: 'v1.0',
   klanteisen: '2026-10-20-v2', // Bumped: new comprehensive prompt with klanttype detection
   tenders: 'v1.0',
+  gesprek: 'v1.0',
 };
 
 export function getPromptVersion(section: SectionName): string {
@@ -34,6 +36,7 @@ export function getSectionDisplayName(section: SectionName): string {
     claimcheck: 'Claimcheck',
     klanteisen: 'Wat uw klanten gaan vragen',
     tenders: 'Tenders & Projecten',
+    gesprek: 'Gesprek voorbereiden',
   };
   return names[section];
 }
