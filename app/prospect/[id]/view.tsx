@@ -180,7 +180,7 @@ export function ProspectView({ client }: { client: any }) {
         <KlanteisenSection clientId={client.id} dossier={dossier} />
 
         {/* PROFIEL */}
-        <SectionWrapper clientId={client.id} section="profiel" sectionMetadata={sectionMetadata} refreshLabel="Profiel vernieuwen">
+        <SectionWrapper clientId={client.id} section="profiel" sectionMetadata={sectionMetadata} refreshLabel="Profiel">
           <Section id="profiel" title="Bedrijfsprofiel" icon={<Building2 className="w-5 h-5" />}>
             {Object.keys(profiel).length > 0 ? (
               <>
@@ -215,7 +215,7 @@ export function ProspectView({ client }: { client: any }) {
         )}
 
         {/* VSME */}
-        <SectionWrapper clientId={client.id} section="vsme" sectionMetadata={sectionMetadata} refreshLabel="VSME vernieuwen">
+        <SectionWrapper clientId={client.id} section="vsme" sectionMetadata={sectionMetadata} refreshLabel="VSME & gaten">
           <Section id="vsme" title="VSME Basic B1–B11" icon={<ListChecks className="w-5 h-5" />} count={vsmeEntries.length}>
             {vsmeEntries.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -266,7 +266,7 @@ export function ProspectView({ client }: { client: any }) {
         )}
 
         {/* CERTIFICATEN */}
-        <SectionWrapper clientId={client.id} section="certificaten" sectionMetadata={sectionMetadata} refreshLabel="Certificaten vernieuwen">
+        <SectionWrapper clientId={client.id} section="certificaten" sectionMetadata={sectionMetadata} refreshLabel="Certificaten">
           <Section id="certificaten" title="Certificaten & keurmerken" icon={<Award className="w-5 h-5" />} count={certificaten.length}>
             {certificaten.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -320,7 +320,7 @@ export function ProspectView({ client }: { client: any }) {
         </SectionWrapper>
 
         {/* CLAIMS */}
-        <SectionWrapper clientId={client.id} section="claimcheck" sectionMetadata={sectionMetadata} refreshLabel="Claims vernieuwen">
+        <SectionWrapper clientId={client.id} section="claimcheck" sectionMetadata={sectionMetadata} refreshLabel="Claims">
           <Section id="claims" title="Duurzaamheidsclaims (ECGT / ACM)" icon={<Megaphone className="w-5 h-5" />} count={allClaims.length}>
           {allClaims.length > 0 ? (
             <div className="space-y-3">
@@ -354,7 +354,7 @@ export function ProspectView({ client }: { client: any }) {
         </SectionWrapper>
 
         {/* GATEN */}
-        <SectionWrapper clientId={client.id} section="vsme" sectionMetadata={sectionMetadata} refreshLabel="Gaten vernieuwen">
+        <SectionWrapper clientId={client.id} section="vsme" sectionMetadata={sectionMetadata} refreshLabel="Gaten">
           <Section id="gaten" title="Gaten en bewijsacties" icon={<AlertOctagon className="w-5 h-5" />} count={gaten.length}>
             {gaten.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -388,7 +388,7 @@ export function ProspectView({ client }: { client: any }) {
               </ul>
             ) : <p className="text-slate-300 italic">Geen nieuws gevonden.</p>}
           </Section>
-          <SectionWrapper clientId={client.id} section="tenders" sectionMetadata={sectionMetadata} refreshLabel="Tenders vernieuwen">
+          <SectionWrapper clientId={client.id} section="tenders" sectionMetadata={sectionMetadata} refreshLabel="Tenders">
             <Section title="Tenders & projecten" icon={<Briefcase className="w-5 h-5" />} count={tenders.length}>
               {tenders.length > 0 ? (
                 <ul className="space-y-3">

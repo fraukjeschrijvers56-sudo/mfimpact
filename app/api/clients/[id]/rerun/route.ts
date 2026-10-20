@@ -99,114 +99,133 @@ async function runFullRerunChain(clientId: number, jobIds: Record<string, number
       throw new Error('Client not found');
     }
 
-    // Step 1: Run web research and store onderzoek_ruw
-    console.log(`[Full Rerun ${clientId}] Step 1: Web research`);
+    // Step 1: Run full research via research-engine
+    console.log(`[Full Rerun ${clientId}] Step 1: Full dossier research`);
     
     const websiteUrl = client.website_url;
     const plaats = client.plaats;
 
     if (!websiteUrl || !plaats) {
-      throw new Error('Website URL and plaats are required for full rerun');
+      throw new Error('Website-URL en plaats zijn vereist voor volledig heronderzoek');
     }
 
-    // TODO: Run actual web research here
-    // This would call the onderzoek-systeem.md prompt with website & plaats
-    // For now, we'll just mark it as placeholder
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY ontbreekt in omgevingsvariabelen');
+    }
+
+    // Call research-engine (same as original working flow)
+    const { performDossierResearch, validateDossierQuotes } = await import('@/lib/research-engine');
     
+    const researchResult = await performDossierResearch(websiteUrl, plaats, apiKey, 180000);
+    
+    if (!researchResult.dossier || researchResult.error) {
+      throw new Error(`Webonderzoek mislukt: ${researchResult.error || 'geen geldig dossier'}`);
+    }
+
+    console.log(`[Full Rerun ${clientId}] Research completed with model ${researchResult.model}, ${researchResult.citations.length} citations`);
+
+    // Validate quotes (parallel fetches)
+    const validatedDossier = await validateDossierQuotes(researchResult.dossier, 45000);
+
+    // Store in dossier.onderzoek AND onderzoek_ruw
     const onderzoekRuw = {
       timestamp: new Date().toISOString(),
       website: websiteUrl,
       plaats,
-      bronnen: [],
-      raw_text: 'Placeholder for web research results',
+      raw_text: researchResult.raw,
+      model: researchResult.model,
+      citations: researchResult.citations,
+      bronnen: researchResult.citations,
     };
 
-    // Save onderzoek_ruw to database
+    // Parse existing dossier to preserve other sections
+    let dossier: any = client.dossier;
+    if (typeof dossier === 'string') {
+      try { dossier = JSON.parse(dossier); } catch { dossier = {}; }
+    }
+    dossier = dossier || {};
+
+    // Update onderzoek with validated result
+    dossier.onderzoek = validatedDossier;
+    dossier.onderzoek_model = researchResult.model;
+    dossier.onderzoek_op = new Date().toISOString();
+    dossier.onderzoek_webbronnen = researchResult.citations;
+
+    // Save to database
     if (isUsingSupabase()) {
       await db.from('clients').update({
+        dossier,
         onderzoek_ruw: onderzoekRuw,
       }).eq('id', clientId);
     } else {
-      db.prepare('UPDATE clients SET onderzoek_ruw = ? WHERE id = ?')
-        .run(JSON.stringify(onderzoekRuw), clientId);
+      db.prepare('UPDATE clients SET dossier = ?, onderzoek_ruw = ? WHERE id = ?')
+        .run(JSON.stringify(dossier), JSON.stringify(onderzoekRuw), clientId);
     }
 
-    // Step 2-7: Run each section in order
-    for (const section of SECTION_ORDER) {
-      const jobId = jobIds[section];
-      console.log(`[Full Rerun ${clientId}] Running section: ${section}`);
+    console.log(`[Full Rerun ${clientId}] Full research completed, now running klanteisen as follow-up`);
 
-      await updateSectionJob(jobId, {
-        status: 'running',
-        started_at: new Date().toISOString(),
-        progress: 10,
+    // Step 2: Run klanteisen as follow-up using the sections API
+    // This ensures klanteisen uses the fresh onderzoek data
+    const klanteisJobId = jobIds['klanteisen'];
+    
+    try {
+      const response = await fetch(`http://localhost:3000/api/clients/${clientId}/sections/klanteisen`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-
-      try {
-        // Reload client to get latest state
-        if (isUsingSupabase()) {
-          const { data } = await db.from('clients').select('*').eq('id', clientId).single();
-          client = data;
-        } else {
-          client = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId);
-        }
-
-        let dossier: any = client.dossier;
-        if (typeof dossier === 'string') {
-          try { dossier = JSON.parse(dossier); } catch { dossier = {}; }
-        }
-        dossier = dossier || {};
-
-        let sectionMetadata: any = client.section_metadata;
-        if (typeof sectionMetadata === 'string') {
-          try { sectionMetadata = JSON.parse(sectionMetadata); } catch { sectionMetadata = {}; }
-        }
-        sectionMetadata = sectionMetadata || {};
-
-        let onderzoekRuwData: any = client.onderzoek_ruw;
-        if (typeof onderzoekRuwData === 'string') {
-          try { onderzoekRuwData = JSON.parse(onderzoekRuwData); } catch { onderzoekRuwData = {}; }
-        }
-
-        // TODO: Process section with AI using section-specific prompt
-        // - lib/prompts/profiel.md
-        // - lib/prompts/vsme.md (includes gaten)
-        // - lib/prompts/certificaten.md
-        // - lib/prompts/claimcheck.md
-        // - lib/prompts/klanteisen.md
-        // - lib/prompts/tenders.md
-
-        await updateSectionJob(jobId, { progress: 80 });
-
-        // Update section metadata
-        sectionMetadata[section] = createSectionMetadata(section);
-
-        // Save to database
-        if (isUsingSupabase()) {
-          await db.from('clients').update({
-            dossier,
-            section_metadata: sectionMetadata,
-          }).eq('id', clientId);
-        } else {
-          db.prepare('UPDATE clients SET dossier = ?, section_metadata = ? WHERE id = ?')
-            .run(JSON.stringify(dossier), JSON.stringify(sectionMetadata), clientId);
-        }
-
-        await updateSectionJob(jobId, {
-          status: 'done',
-          progress: 100,
-          completed_at: new Date().toISOString(),
-        });
-
-        console.log(`[Full Rerun ${clientId}] Section ${section} completed`);
-      } catch (error) {
-        console.error(`[Full Rerun ${clientId}] Error in section ${section}:`, error);
-        await updateSectionJob(jobId, {
-          status: 'error',
-          error_message: error instanceof Error ? error.message : 'Unknown error',
-          completed_at: new Date().toISOString(),
-        });
+      
+      if (!response.ok) {
+        console.error(`[Full Rerun ${clientId}] Klanteisen call failed:`, response.status);
+      } else {
+        console.log(`[Full Rerun ${clientId}] Klanteisen job started`);
       }
+    } catch (error) {
+      console.error(`[Full Rerun ${clientId}] Error calling klanteisen:`, error);
+    }
+
+    // Mark other section jobs as done (they were populated by the full research)
+    const { updateSectionMetadata } = await import('@/lib/section-versions');
+    
+    // Reload client to get latest dossier
+    if (isUsingSupabase()) {
+      const { data } = await db.from('clients').select('*').eq('id', clientId).single();
+      client = data;
+    } else {
+      client = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId);
+    }
+    
+    let sectionMetadata: any = client.section_metadata;
+    if (typeof sectionMetadata === 'string') {
+      try { sectionMetadata = JSON.parse(sectionMetadata); } catch { sectionMetadata = {}; }
+    }
+    sectionMetadata = sectionMetadata || {};
+    
+    // Mark all non-klanteisen sections as done
+    for (const section of SECTION_ORDER.filter(s => s !== 'klanteisen')) {
+      const jobId = jobIds[section];
+      
+      await updateSectionJob(jobId, {
+        status: 'done',
+        progress: 100,
+        completed_at: new Date().toISOString(),
+      });
+      
+      sectionMetadata = updateSectionMetadata(sectionMetadata, section as any, {
+        status: 'done',
+      });
+    }
+    
+    // Save metadata
+    if (isUsingSupabase()) {
+      await db.from('clients').update({
+        section_metadata: sectionMetadata,
+      }).eq('id', clientId);
+    } else {
+      db.prepare('UPDATE clients SET section_metadata = ? WHERE id = ?')
+        .run(JSON.stringify(sectionMetadata), clientId);
     }
 
     console.log(`[Full Rerun ${clientId}] Complete`);

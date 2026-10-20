@@ -136,32 +136,34 @@ async function processSectionAsync(
       // Process section based on type
       let newSectionData: any = {};
 
+      // Get API key
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error('OPENAI_API_KEY ontbreekt in omgevingsvariabelen');
+      }
+
       switch (sectionName) {
-        case 'klanteisen':
-          // Call AI with klanteisen prompt
-          // NEVER stop on missing klanttypen - the prompt itself performs detection
-          try {
-            const fs = await import('fs/promises');
-            const path = await import('path');
-            const promptPath = path.join(process.cwd(), 'lib/prompts/klanteisen.md');
-            let promptTemplate = await fs.readFile(promptPath, 'utf-8');
-            
-            const { KLANTEISEN_KB } = await import('@/lib/klanteisen');
-            const onderzoek = dossier.onderzoek || dossier;
-            const profiel = onderzoek.profiel || {};
-            
-            // Get client record for metadata
-            let clientRecord: any = null;
-            if (isUsingSupabase()) {
-              const { data } = await db.from('clients').select('*').eq('id', clientId).single();
-              clientRecord = data;
-            } else {
-              clientRecord = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId);
-            }
-            
-            // Build onderzoek_json from dossier.onderzoek when onderzoek_ruw is empty
-            // Include key fields: profiel, tenders_projecten, certificaten, vsme_basic, doorzochte_bronnen
-            const onderzoekInput = {
+        case 'klanteisen': {
+          const { KLANTEISEN_KB } = await import('@/lib/klanteisen');
+          const { callSectionAI } = await import('@/lib/section-ai');
+          const onderzoek = dossier.onderzoek || dossier;
+          const profiel = onderzoek.profiel || {};
+          
+          // Get client record
+          let clientRecord: any = null;
+          if (isUsingSupabase()) {
+            const { data } = await db.from('clients').select('*').eq('id', clientId).single();
+            clientRecord = data;
+          } else {
+            clientRecord = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId);
+          }
+          
+          // Build input with KB
+          const klanteisInput = {
+            naam: profiel.handelsnaam || clientRecord?.naam || 'de prospect',
+            url: clientRecord?.website_url || 'onbekend',
+            plaats: profiel.hoofdvestiging || clientRecord?.plaats || 'onbekend',
+            onderzoek: {
               profiel: {
                 ...profiel,
                 sector: profiel.sector || profiel.sbi,
@@ -174,130 +176,168 @@ async function processSectionAsync(
               vsme_basic: onderzoek.vsme_basic || onderzoek.vsme || {},
               doorzochte_bronnen: onderzoek.doorzochte_bronnen || [],
               kansen_gesprek: onderzoek.kansen_gesprek || [],
-            };
-            
-            // Fill placeholders
-            const naam = profiel.handelsnaam || clientRecord?.naam || 'de prospect';
-            const url = clientRecord?.website_url || 'onbekend';
-            const plaats = profiel.hoofdvestiging || clientRecord?.plaats || 'onbekend';
-            
-            promptTemplate = promptTemplate.replace(/\{naam\}/g, naam);
-            promptTemplate = promptTemplate.replace(/\{url\}/g, url);
-            promptTemplate = promptTemplate.replace(/\{plaats\}/g, plaats);
-            promptTemplate = promptTemplate.replace(/\{onderzoek_json\}/g, JSON.stringify(onderzoekInput, null, 2));
-            promptTemplate = promptTemplate.replace(/\{kennisbank_json\}/g, JSON.stringify(KLANTEISEN_KB, null, 2));
-            
-            // Call OpenAI with web_search enabled
-            const apiKey = process.env.OPENAI_API_KEY;
-            if (!apiKey) {
-              throw new Error('OPENAI_API_KEY ontbreekt in omgevingsvariabelen');
-            }
-            
-            console.log(`[Klanteisen ${clientId}] Calling OpenAI for ${naam}...`);
-            
-            const models = ['gpt-4o', 'gpt-4-turbo'];
-            let result: any = null;
-            
-            for (const model of models) {
-              try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    model,
-                    messages: [
-                      { role: 'user', content: promptTemplate }
-                    ],
-                    tools: [{ type: 'web_search_preview' }],
-                    max_tokens: 4000,
-                    temperature: 0.1,
-                  }),
-                  signal: AbortSignal.timeout(120000), // 2 min timeout
-                });
-
-                if (!response.ok) {
-                  const errorText = await response.text();
-                  console.error(`[Klanteisen ${clientId}] Model ${model} failed:`, response.status, errorText);
-                  continue;
-                }
-
-                const data = await response.json();
-                const content = data.choices?.[0]?.message?.content;
-                
-                if (content) {
-                  console.log(`[Klanteisen ${clientId}] Got response from ${model}, length: ${content.length}`);
-                  
-                  // Parse JSON robustly
-                  const jsonMatch = content.match(/```json\s*\n?([\s\S]*?)\n?```/);
-                  const jsonStr = jsonMatch ? jsonMatch[1] : content;
-                  
-                  try {
-                    result = JSON.parse(jsonStr);
-                    console.log(`[Klanteisen ${clientId}] Parsed JSON successfully`);
-                    break;
-                  } catch (parseError) {
-                    console.error(`[Klanteisen ${clientId}] JSON parse error:`, parseError);
-                    console.error('Content:', content.substring(0, 500));
-                    continue;
-                  }
-                }
-              } catch (modelError) {
-                console.error(`[Klanteisen ${clientId}] Model ${model} error:`, modelError);
-                continue;
-              }
-            }
-            
-            if (!result) {
-              throw new Error('OpenAI antwoordde niet met geldig JSON na alle modelpogingen');
-            }
-            
-            // Validate result has meaningful data
-            const klanttypen = result.klanttypen || [];
-            const eisen = result.eisen || [];
-            const tendertreffers = result.tendertreffers || [];
-            const aanknopingspunten = result.aanknopingspunten || [];
-            
-            if (klanttypen.length === 0 && eisen.length === 0 && aanknopingspunten.length === 0) {
-              throw new Error(`Geen klanttypen, eisen of aanknopingspunten gevonden. Dit kan betekenen dat het onderzoek onvoldoende informatie bevat over klanten/referenties van ${naam}. Controleer of profiel.belangrijkste_klanten_referenties gevuld is.`);
-            }
-            
-            console.log(`[Klanteisen ${clientId}] Success: ${klanttypen.length} klanttypen, ${eisen.length} eisen, ${tendertreffers.length} tenders, ${aanknopingspunten.length} aanknopingspunten`);
-            
-            // Structure output
-            newSectionData = {
-              klanteisen: {
-                klanttypen,
-                eisen,
-                tendertreffers,
-                aanknopingspunten,
-                // Keep old structure for compat
-                concrete_tenders: tendertreffers,
-              },
-            };
-          } catch (error: any) {
-            console.error(`[Klanteisen ${clientId}] Error:`, error);
-            throw new Error(`Klanteisen ophalen mislukt: ${error.message}`);
+            },
+            kennisbank: KLANTEISEN_KB,
+          };
+          
+          const result = await callSectionAI(
+            {
+              sectionName: 'klanteisen',
+              promptFile: 'klanteisen.md',
+              useWebSearch: true,
+              schemaKeys: ['klanttypen', 'eisen', 'aanknopingspunten'],
+            },
+            klanteisInput,
+            apiKey,
+            120000
+          );
+          
+          if (result.error || !result.data) {
+            throw new Error(result.error || 'Klanteisen ophalen mislukt zonder data');
           }
+          
+          const klanttypen = result.data.klanttypen || [];
+          const eisen = result.data.eisen || [];
+          const tendertreffers = result.data.tendertreffers || [];
+          const aanknopingspunten = result.data.aanknopingspunten || [];
+          
+          if (klanttypen.length === 0 && eisen.length === 0 && aanknopingspunten.length === 0) {
+            throw new Error(`Geen klanttypen, eisen of aanknopingspunten gevonden voor ${klanteisInput.naam}. Controleer of belangrijkste_klanten_referenties gevuld is.`);
+          }
+          
+          newSectionData = {
+            klanteisen: {
+              klanttypen,
+              eisen,
+              tendertreffers,
+              aanknopingspunten,
+              concrete_tenders: tendertreffers,
+            },
+          };
           break;
+        }
 
-        case 'certificaten':
-        case 'profiel':
-        case 'vsme':
-        case 'claimcheck':
-        case 'tenders':
-          // In a real implementation, these would call AI with section-specific prompts:
-          // - lib/prompts/profiel.md
-          // - lib/prompts/vsme.md (includes gaten)
-          // - lib/prompts/certificaten.md
-          // - lib/prompts/claimcheck.md
-          // - lib/prompts/tenders.md (uses TenderNed web search)
-          // Using researchInput as context
-          // NEVER stop on missing input - each prompt handles detection/search
-          newSectionData = {};
+        case 'profiel': {
+          const { callSectionAI } = await import('@/lib/section-ai');
+          const result = await callSectionAI(
+            {
+              sectionName: 'profiel',
+              promptFile: 'profiel.md',
+              useWebSearch: false,
+              schemaKeys: ['profiel'],
+            },
+            researchInput,
+            apiKey,
+            60000
+          );
+          
+          if (result.error || !result.data || !result.data.profiel) {
+            throw new Error(result.error || 'Profiel genereren mislukt: geen data');
+          }
+          
+          newSectionData = { profiel: result.data.profiel };
           break;
+        }
+
+        case 'vsme': {
+          const { callSectionAI } = await import('@/lib/section-ai');
+          const result = await callSectionAI(
+            {
+              sectionName: 'vsme',
+              promptFile: 'vsme.md',
+              useWebSearch: false,
+              schemaKeys: ['vsme_basic', 'gaten'],
+            },
+            researchInput,
+            apiKey,
+            90000
+          );
+          
+          if (result.error || !result.data) {
+            throw new Error(result.error || 'VSME genereren mislukt: geen data');
+          }
+          
+          newSectionData = {
+            vsme_basic: result.data.vsme_basic || result.data.vsme || {},
+            gaten: result.data.gaten || [],
+          };
+          break;
+        }
+
+        case 'certificaten': {
+          const { callSectionAI } = await import('@/lib/section-ai');
+          const result = await callSectionAI(
+            {
+              sectionName: 'certificaten',
+              promptFile: 'certificaten.md',
+              useWebSearch: true,
+              schemaKeys: ['certificaten'],
+            },
+            researchInput,
+            apiKey,
+            90000
+          );
+          
+          if (result.error || !result.data) {
+            throw new Error(result.error || 'Certificaten genereren mislukt: geen data');
+          }
+          
+          newSectionData = {
+            certificaten: result.data.certificaten || [],
+          };
+          break;
+        }
+
+        case 'claimcheck': {
+          const { callSectionAI } = await import('@/lib/section-ai');
+          const result = await callSectionAI(
+            {
+              sectionName: 'claimcheck',
+              promptFile: 'claimcheck.md',
+              useWebSearch: false,
+              schemaKeys: ['claims'],
+            },
+            researchInput,
+            apiKey,
+            60000
+          );
+          
+          if (result.error || !result.data) {
+            throw new Error(result.error || 'Claimcheck mislukt: geen data');
+          }
+          
+          newSectionData = {
+            claims: result.data.claims || [],
+          };
+          break;
+        }
+
+        case 'tenders': {
+          const { callSectionAI } = await import('@/lib/section-ai');
+          const result = await callSectionAI(
+            {
+              sectionName: 'tenders',
+              promptFile: 'tenders.md',
+              useWebSearch: true,
+              schemaKeys: ['tenders_projecten', 'tenders'],
+            },
+            researchInput,
+            apiKey,
+            90000
+          );
+          
+          if (result.error || !result.data) {
+            throw new Error(result.error || 'Tenders genereren mislukt: geen data');
+          }
+          
+          newSectionData = {
+            tenders_projecten: result.data.tenders_projecten || result.data.tenders || [],
+          };
+          break;
+        }
+
+        default:
+          throw new Error(`Onbekende sectie: ${sectionName}`);
       }
 
       await updateSectionJob(jobId, { progress: 80 });
