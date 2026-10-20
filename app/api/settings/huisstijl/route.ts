@@ -1,30 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUsingSupabase, getDb } from '@/lib/db';
+import { DEFAULT_SETTINGS, type HuisstijlSettings } from '@/lib/huisstijl';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-interface HuisstijlSettings {
-  primary_color: string;
-  secondary_color: string;
-  font: string;
-  heading_color?: string;
-  table_shade?: string;
-  status_red?: string;
-  status_amber?: string;
-  status_green?: string;
-}
-
-const DEFAULT_SETTINGS: HuisstijlSettings = {
-  primary_color: '#039088', // MF Impact teal
-  secondary_color: '#0C4643', // MF Impact dark green (headings, text accents)
-  font: 'Aptos',
-  heading_color: '#0C4643', // Dark green for headings
-  table_shade: '#F4F7F7', // Light grey for table row shading
-  status_red: '#D64545', // Red for kick-out/gap
-  status_amber: '#FFC14D', // Amber for partial/advantage
-  status_green: '#039088', // Teal for in order
-};
 
 /**
  * GET /api/settings/huisstijl
@@ -76,18 +55,28 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { primary_color, secondary_color, font } = body;
-
-    // Validate colors (hex format)
     const hexRegex = /^#[0-9A-Fa-f]{6}$/;
-    if (!hexRegex.test(primary_color) || !hexRegex.test(secondary_color)) {
-      return NextResponse.json(
-        { error: 'Ongeldige kleurwaarde (gebruik hex formaat #RRGGBB)' },
-        { status: 400 }
-      );
+    const colorKeys: (keyof HuisstijlSettings)[] = [
+      'primary_color',
+      'secondary_color',
+      'heading_color',
+      'table_shade',
+      'status_red',
+      'status_amber',
+      'status_green',
+    ];
+
+    for (const key of colorKeys) {
+      const value = body[key];
+      if (value != null && value !== '' && !hexRegex.test(value)) {
+        return NextResponse.json(
+          { error: `Ongeldige kleurwaarde voor ${key} (gebruik hex formaat #RRGGBB)` },
+          { status: 400 }
+        );
+      }
     }
 
-    // Validate font
+    const font = body.font || DEFAULT_SETTINGS.font;
     const allowedFonts = ['Aptos', 'Calibri', 'Inter', 'Arial'];
     if (!allowedFonts.includes(font)) {
       return NextResponse.json(
@@ -96,7 +85,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const settings: HuisstijlSettings = { primary_color, secondary_color, font };
+    const settings: HuisstijlSettings = {
+      ...DEFAULT_SETTINGS,
+      ...body,
+      font,
+    };
     const db = getDb();
 
     if (isUsingSupabase()) {

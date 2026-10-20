@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isUsingSupabase, getDb } from '@/lib/db';
 import { generateWordReport, generatePowerPointReport, generatePDFReport } from '@/lib/report-generator';
+import { DEFAULT_SETTINGS, type HuisstijlSettings } from '@/lib/huisstijl';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -45,12 +46,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
-    // Get huisstijl settings
-    let huisstijl = {
-      primary_color: '#10b981',
-      secondary_color: '#3b82f6',
-      font: 'Aptos',
-    };
+    // Get huisstijl settings (settings table merged over brand defaults)
+    let huisstijl: HuisstijlSettings = { ...DEFAULT_SETTINGS };
 
     if (isUsingSupabase()) {
       const { data } = await db.from('settings').select('*').eq('key', 'huisstijl').single();
