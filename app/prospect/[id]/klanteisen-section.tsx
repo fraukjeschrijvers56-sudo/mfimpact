@@ -1,28 +1,42 @@
 import { Users, AlertTriangle, Award, ClipboardCheck, ExternalLink } from 'lucide-react';
 import { mergeKlanteisen, PEILDATUM, INDICATIEF_LABEL, type EisNiveau } from '@/lib/klanteisen';
 import { Bronnen } from './parts';
+import { SectionRefreshButton } from './section-refresh-button';
+import { SectionMetadataBadge } from './section-metadata-badge';
 
 interface Props {
+  clientId: number;
   dossier: any;
 }
 
-export function KlanteisenSection({ dossier }: Props) {
+export function KlanteisenSection({ clientId, dossier }: Props) {
   const onderzoek = dossier.onderzoek || dossier;
   const klanteisen = onderzoek.klanteisen || { klanttypen: [], concrete_tenders: [] };
   
+  let sectionMetadata: any = dossier.section_metadata;
+  if (typeof sectionMetadata === 'string') {
+    try { sectionMetadata = JSON.parse(sectionMetadata); } catch { sectionMetadata = {}; }
+  }
+  sectionMetadata = sectionMetadata || {};
+  const metadata = sectionMetadata.klanteisen;
+
   if (!klanteisen.klanttypen || klanteisen.klanttypen.length === 0) {
     return (
       <section id="klanteisen" className="rounded-2xl bg-emerald-950/85 border border-emerald-600/40 shadow-xl backdrop-blur-xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-3 rounded-xl bg-emerald-800/50 border border-emerald-700/50">
-            <Users className="w-5 h-5 text-emerald-300" />
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-emerald-800/50 border border-emerald-700/50">
+              <Users className="w-5 h-5 text-emerald-300" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Wat uw klanten gaan vragen</h2>
+              <p className="text-sm text-emerald-200/70">Klanttype-specifieke eisen</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">Wat uw klanten gaan vragen</h2>
-            <p className="text-sm text-emerald-200/70">Klanttype-specifieke eisen</p>
-          </div>
+          <SectionRefreshButton clientId={clientId} section="klanteisen" label="Klanteisen ophalen" />
         </div>
-        <p className="text-emerald-100/70 italic">Geen klanttypen gedetecteerd in onderzoek.</p>
+        <p className="text-emerald-100/70 italic mb-3">Geen klanttypen gedetecteerd in onderzoek.</p>
+        <SectionMetadataBadge section="klanteisen" metadata={metadata} />
       </section>
     );
   }
@@ -58,17 +72,23 @@ export function KlanteisenSection({ dossier }: Props) {
   return (
     <section id="klanteisen" className="rounded-2xl bg-emerald-950/85 border border-emerald-600/40 shadow-xl backdrop-blur-xl p-6">
       <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-emerald-800/50 border border-emerald-700/50">
-            <Users className="w-5 h-5 text-emerald-300" />
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-3 rounded-xl bg-emerald-800/50 border border-emerald-700/50">
+              <Users className="w-5 h-5 text-emerald-300" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Wat uw klanten gaan vragen</h2>
+              <p className="text-sm text-emerald-200/70">
+                Peildatum: {PEILDATUM} · <span className="italic">{INDICATIEF_LABEL}</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-white">Wat uw klanten gaan vragen</h2>
-            <p className="text-sm text-emerald-200/70">
-              Peildatum: {PEILDATUM} · <span className="italic">{INDICATIEF_LABEL}</span>
-            </p>
+          <div className="ml-16">
+            <SectionMetadataBadge section="klanteisen" metadata={metadata} />
           </div>
         </div>
+        <SectionRefreshButton clientId={clientId} section="klanteisen" label="Klanteisen ophalen" />
       </div>
 
       <div className="space-y-6">

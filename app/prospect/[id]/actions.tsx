@@ -48,13 +48,13 @@ export function ProspectActions({ client }: { client: any }) {
 
   const reAnalyze = () => {
     if (!client.website_url || !client.plaats) {
-      alert('Website-URL en plaats zijn vereist om opnieuw te onderzoeken');
+      alert('Website-URL en plaats zijn vereist om volledig opnieuw te onderzoeken');
       return;
     }
 
     if (
       !confirm(
-        `Opnieuw onderzoeken voor ${client.naam}? Dit kan enkele minuten duren en overschrijft het huidige dossier.`
+        `VOLLEDIG opnieuw onderzoeken voor ${client.naam}?\n\nDit kan enkele minuten duren en overschrijft het huidige dossier (behalve handmatig aangepaste velden).\n\nTip: gebruik de '↻ Vernieuw' knoppen per sectie voor snellere updates van specifieke onderdelen.`
       )
     ) {
       return;
@@ -115,10 +115,10 @@ export function ProspectActions({ client }: { client: any }) {
       <button
         onClick={reAnalyze}
         className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-violet-700/60 text-violet-100 hover:bg-violet-600 font-medium"
-        title="Opnieuw onderzoeken"
-        aria-label="Opnieuw onderzoeken"
+        title="Volledig opnieuw onderzoeken (alle secties)"
+        aria-label="Volledig opnieuw onderzoeken"
       >
-        <RefreshCw className="w-4 h-4" /> Opnieuw onderzoeken
+        <RefreshCw className="w-4 h-4" /> Volledig opnieuw onderzoeken
       </button>
       <button
         onClick={deleteProspect}

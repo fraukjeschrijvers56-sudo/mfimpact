@@ -165,7 +165,7 @@ export function ProspectView({ client }: { client: any }) {
         <MvoRegisterCard clientId={client.id} data={mvoRegister} />
 
         {/* KLANTEISEN */}
-        <KlanteisenSection dossier={dossier} />
+        <KlanteisenSection clientId={client.id} dossier={dossier} />
 
         {/* KANSEN */}
         {kansen.length > 0 && (

@@ -134,6 +134,32 @@ function initDb(db: any) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS dossier_versions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER NOT NULL,
+      version_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      dossier_snapshot TEXT NOT NULL,
+      section_name TEXT,
+      changed_by TEXT,
+      change_reason TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS section_jobs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER NOT NULL,
+      section_name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'queued',
+      progress INTEGER DEFAULT 0,
+      error_message TEXT,
+      started_at DATETIME,
+      completed_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
+    );
   `);
 }
 
