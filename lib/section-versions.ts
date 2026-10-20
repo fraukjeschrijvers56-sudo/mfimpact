@@ -18,7 +18,7 @@ const PROMPT_VERSIONS: Record<SectionName, string> = {
   vsme: 'v1.0',
   certificaten: 'v1.0',
   claimcheck: 'v1.0',
-  klanteisen: KLANTEISEN_PEILDATUM, // Use KB peildatum as version
+  klanteisen: '2026-10-20-v2', // Bumped: new comprehensive prompt with klanttype detection
   tenders: 'v1.0',
 };
 

@@ -17,6 +17,23 @@ export function SectionMetadataBadge({ section, metadata }: Props) {
     );
   }
 
+  // Show error state prominently
+  if (metadata.status === 'error') {
+    return (
+      <div className="inline-flex items-center gap-3 text-xs flex-wrap">
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-900/60 text-red-200 border border-red-600/50">
+          <AlertTriangle className="w-4 h-4" />
+          Fout bij vernieuwen
+        </span>
+        {metadata.error_message && (
+          <span className="text-red-200/80">
+            {metadata.error_message}
+          </span>
+        )}
+      </div>
+    );
+  }
+
   const isOutdated = isSectionOutdated(metadata, section);
   const updatedAt = new Date(metadata.updated_at);
   const formattedDate = updatedAt.toLocaleString('nl-NL', {

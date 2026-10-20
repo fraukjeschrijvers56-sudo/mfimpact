@@ -176,19 +176,8 @@ export function ProspectView({ client }: { client: any }) {
         {/* MVO-REGISTER */}
         <MvoRegisterCard clientId={client.id} data={mvoRegister} />
 
-        {/* KLANTEISEN */}
+        {/* KLANTEISEN - merged with aanknopingspunten */}
         <KlanteisenSection clientId={client.id} dossier={dossier} />
-
-        {/* KANSEN */}
-        {kansen.length > 0 && (
-          <Section id="kansen" title="Aanknopingspunten voor het gesprek" icon={<Lightbulb className="w-5 h-5" />} count={kansen.length}>
-            <ul className="grid md:grid-cols-2 gap-3">
-              {kansen.map((k: any, i: number) => (
-                <li key={i} className="rounded-xl bg-emerald-800/50 border border-emerald-600/40 p-3 text-white"><Waarde v={k} /></li>
-              ))}
-            </ul>
-          </Section>
-        )}
 
         {/* PROFIEL */}
         <SectionWrapper clientId={client.id} section="profiel" sectionMetadata={sectionMetadata} refreshLabel="Profiel vernieuwen">
