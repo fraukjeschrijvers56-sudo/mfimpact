@@ -18,7 +18,8 @@ describe('assessLegislation', () => {
     assert.ok(byId.energiebesparingsplicht.needed?.includes('m³'));
 
     assert.equal(byId.eudr.status, 'te_onderzoeken');
-    assert.ok(/producten of grondstoffen/i.test(byId.eudr.needed || ''));
+    assert.ok(/EUDR-goederen/i.test(byId.eudr.needed || ''));
+    assert.ok(/geëxporteerd/i.test(byId.eudr.needed || ''));
 
     assert.equal(byId.cbam.status, 'te_onderzoeken');
     assert.ok(/CBAM-goederen/i.test(byId.cbam.needed || ''));
@@ -64,7 +65,7 @@ describe('assessLegislation', () => {
     assert.ok(/gunningsvoordeel/i.test(ladder?.reasons.join(' ') || ''));
   });
 
-  it('CSRD with hard FTE below 1000 is NVT even if omzet is unknown', () => {
+  it('CSRD with Drimble FTE is TE ONDERZOEKEN, not NVT', () => {
     const result = assessLegislation(
       {},
       {
@@ -73,7 +74,29 @@ describe('assessLegislation', () => {
             aantal_medewerkers: {
               status: 'gevonden',
               waarde: '1',
-              bronnen: [{ url: 'https://drimble.nl/example' }],
+              bronnen: [{ url: 'https://drimble.nl/example', validatie: 'niet_controleerbaar' }],
+            },
+            omzet: { status: 'onbekend', waarde: 'onbekend' },
+          },
+        },
+      }
+    );
+    const csrd = result.items.find((i) => i.id === 'csrd');
+    assert.equal(csrd?.status, 'te_onderzoeken');
+    assert.ok(/KvK\/jaarrekening/i.test(csrd?.needed || ''));
+    assert.ok(!csrd?.source || !/KvK \/ jaarrekening/i.test(csrd.source));
+  });
+
+  it('CSRD with KvK-sourced FTE 1 is NVT even if omzet is unknown', () => {
+    const result = assessLegislation(
+      {},
+      {
+        onderzoek: {
+          profiel: {
+            aantal_medewerkers: {
+              status: 'gevonden',
+              waarde: '1',
+              bronnen: [{ url: 'https://www.kvk.nl/zoeken/handelsregister', citaat: '1 werknemer', validatie: 'gevonden' }],
             },
             omzet: { status: 'onbekend', waarde: 'onbekend' },
           },
@@ -83,6 +106,42 @@ describe('assessLegislation', () => {
     const csrd = result.items.find((i) => i.id === 'csrd');
     assert.equal(csrd?.status, 'niet_van_toepassing');
     assert.ok(/FTE 1/.test(csrd?.reasons.join(' ') || ''));
+    assert.ok(/kvk\.nl/i.test(csrd?.source || ''));
+  });
+
+  it('EUDR from website services without SBI is TE ONDERZOEKEN; SBI service code is NVT', () => {
+    const websiteOnly = assessLegislation(
+      {},
+      {
+        onderzoek: {
+          profiel: {
+            producten_diensten: { waarde: ['projectmanagement', 'directievoering'], bronnen: [{ url: 'https://example.com/' }] },
+            sector: { waarde: 'adviesbureau' },
+          },
+        },
+      }
+    );
+    assert.equal(websiteOnly.items.find((i) => i.id === 'eudr')?.status, 'te_onderzoeken');
+    assert.ok(/EUDR-goederen/i.test(websiteOnly.items.find((i) => i.id === 'eudr')?.needed || ''));
+
+    const withSbi = assessLegislation(
+      {},
+      {
+        onderzoek: {
+          profiel: {
+            sbi: {
+              status: 'gevonden',
+              waarde: '71120',
+              bronnen: [{ url: 'https://www.kvk.nl/zoeken', citaat: 'SBI 71120 ingenieurs', validatie: 'gevonden' }],
+            },
+            producten_diensten: { waarde: ['projectmanagement'], bronnen: [{ url: 'https://example.com/' }] },
+          },
+        },
+      }
+    );
+    const eudr = withSbi.items.find((i) => i.id === 'eudr');
+    assert.equal(eudr?.status, 'niet_van_toepassing');
+    assert.match(eudr?.source || '', /SBI 71120/);
   });
 
   it('energy below both thresholds with hard numbers is NVT; one missing stays TE ONDERZOEKEN', () => {
@@ -111,10 +170,10 @@ describe('PCO Management fixture', () => {
     );
     const byId = Object.fromEntries(result.items.map((i) => [i.id, i.status]));
 
-    assert.equal(byId.csrd, 'niet_van_toepassing');
+    assert.equal(byId.csrd, 'te_onderzoeken');
     assert.equal(byId.value_chain_cap, 'vrijwillig');
-    assert.equal(byId.csddd, 'niet_van_toepassing');
-    assert.equal(byId.eu_taxonomie, 'niet_van_toepassing');
+    assert.equal(byId.csddd, 'te_onderzoeken');
+    assert.equal(byId.eu_taxonomie, 'te_onderzoeken');
     assert.equal(byId.eudr, 'niet_van_toepassing');
     assert.equal(byId.cbam, 'te_onderzoeken');
     assert.equal(byId.energiebesparingsplicht, 'te_onderzoeken');

@@ -88,9 +88,14 @@ function unknownAsText(value: string): string {
   return value && value.trim() ? value : 'onbekend';
 }
 
+function isUnknownDisplay(value: string | undefined | null): boolean {
+  const t = (value || '').trim().toLowerCase();
+  return !t || t === 'onbekend';
+}
+
 function linkedinDisplay(field: any): string {
-  if (!field) return 'onbekend';
-  if (typeof field === 'string') return field;
+  if (!field) return '';
+  if (typeof field === 'string') return field === 'onbekend' ? '' : field;
   const url = field.url || (field.waarde && typeof field.waarde === 'object' ? field.waarde.url : null);
   const waarde = getValueOrString(field);
   if (url && url !== 'onbekend') {
@@ -102,7 +107,7 @@ function linkedinDisplay(field: any): string {
           : 'LinkedIn';
     return `${type} — ${url}`;
   }
-  return unknownAsText(waarde);
+  return isUnknownDisplay(waarde) ? '' : waarde;
 }
 
 function listFromField(field: any): string[] {
@@ -124,6 +129,14 @@ function nextStepsOf(gesprek: any, documentRequests: string[] = []): NextStep[] 
     );
   }
   return getDefaultNextSteps(documentRequests);
+}
+
+function pptxOverflowRow(shown: number, total: number, cols: number): string[] | null {
+  const extra = total - shown;
+  if (extra <= 0) return null;
+  const row = Array(cols).fill('');
+  row[0] = `+${extra} meer (zie rapport)`;
+  return row;
 }
 
 function leftoverDocumentRequests(nextSteps: NextStep[], documentRequests: string[] = []): string[] {
@@ -206,6 +219,21 @@ function heading1(text: string): Paragraph {
   });
 }
 
+function tocTitle(text: string, color: string): Paragraph {
+  return new Paragraph({
+    spacing: { before: 360, after: 200 },
+    children: [
+      new TextRun({
+        text,
+        font: 'Aptos Display',
+        size: 32,
+        bold: true,
+        color,
+      }),
+    ],
+  });
+}
+
 function heading2(text: string): Paragraph {
   return new Paragraph({
     heading: HeadingLevel.HEADING_2,
@@ -237,6 +265,11 @@ function labelValue(label: string, value: string): Paragraph {
       new TextRun({ text: unknownAsText(value), font: 'Aptos', size: 22 }),
     ],
   });
+}
+
+function optionalLabelValue(label: string, value: string): Paragraph | null {
+  if (isUnknownDisplay(value)) return null;
+  return labelValue(label, value);
 }
 
 function logoParagraph(logo: Buffer | null, width: number, height: number): Paragraph {
@@ -355,11 +388,22 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
     sections: [
       {
         properties: {
+          titlePage: true,
           page: {
             margin: { top: 900, bottom: 800, left: 850, right: 850 },
           },
         },
         headers: {
+          first: new Header({
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.RIGHT,
+                children: [
+                  new TextRun({ text: 'Vertrouwelijk', italics: true, size: 18, font: 'Aptos', color: headingHex }),
+                ],
+              }),
+            ],
+          }),
           default: new Header({
             children: [
               new Table({
@@ -463,7 +507,7 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           }),
           new Paragraph({ children: [new PageBreak()] }),
 
-          heading1('Inhoudsopgave'),
+          tocTitle('Inhoudsopgave', headingHex),
           new TableOfContents('Inhoudsopgave', {
             hyperlink: true,
             headingStyleRange: '1-2',
@@ -545,13 +589,13 @@ function generateBedrijfsprofiel(profiel: any, client: any, tableShade: string, 
     labelValue('Plaats', getValueOrString(profiel.hoofdvestiging) || client.plaats || ''),
     labelValue('SBI/Sector', getValueOrString(profiel.sbi) || getValueOrString(profiel.sector) || client.sector || ''),
     labelValue('Activiteiten', activiteiten.join(', ')),
-    labelValue('Afnemers / markten', afnemers),
-    labelValue('Directie / eigenaren', directie),
-    labelValue('LinkedIn', linkedinDisplay(profiel.linkedin)),
+    optionalLabelValue('Afnemers / markten', afnemers),
+    optionalLabelValue('Directie / eigenaren', directie),
+    optionalLabelValue('LinkedIn', linkedinDisplay(profiel.linkedin)),
     labelValue('Website', client.website_url || ''),
     labelValue('Aantal medewerkers', getValueOrString(profiel.aantal_medewerkers)),
     labelValue('Contact', getValueOrString(profiel.contactgegevens)),
-  ];
+  ].filter((p): p is Paragraph => Boolean(p));
 
   paragraphs.push(heading2('Belangrijkste klanten / referenties'));
   if (klanten.length === 0) {
@@ -1016,22 +1060,28 @@ export async function generatePowerPointReport(data: ReportData): Promise<Buffer
   const profielSlide = pptx.addSlide();
   addContentHeader(profielSlide, '2. Bedrijfsprofiel', huisstijl, logo);
   const activiteiten = listFromField(profiel.producten_diensten).join(', ') || 'onbekend';
+  const afnemersLine = getValueOrString(profiel.afnemers_markten);
+  const directieLine = getValueOrString(profiel.directie_eigenaren);
+  const linkedinLine = linkedinDisplay(profiel.linkedin);
   profielSlide.addText(
     [
       { text: `Naam: ${getValueOrString(profiel.handelsnaam) || client.naam || 'onbekend'}`, options: { breakLine: true } },
       { text: `KvK: ${getValueOrString(profiel.kvk_nummer) || client.kvk || 'onbekend'}`, options: { breakLine: true } },
       { text: `Plaats: ${getValueOrString(profiel.hoofdvestiging) || client.plaats || 'onbekend'}`, options: { breakLine: true } },
       { text: `Activiteiten: ${activiteiten}`, options: { breakLine: true } },
-      { text: `Afnemers: ${getValueOrString(profiel.afnemers_markten) || 'onbekend'}`, options: { breakLine: true } },
-      { text: `Directie / eigenaren: ${getValueOrString(profiel.directie_eigenaren) || 'onbekend'}`, options: { breakLine: true } },
-      { text: `LinkedIn: ${linkedinDisplay(profiel.linkedin)}`, options: { breakLine: true } },
+      ...(isUnknownDisplay(afnemersLine) ? [] : [{ text: `Afnemers: ${afnemersLine}`, options: { breakLine: true } }]),
+      ...(isUnknownDisplay(directieLine) ? [] : [{ text: `Directie / eigenaren: ${directieLine}`, options: { breakLine: true } }]),
+      ...(isUnknownDisplay(linkedinLine) ? [] : [{ text: `LinkedIn: ${linkedinLine}`, options: { breakLine: true } }]),
     ],
     { x: 0.6, y: 1.05, w: 12.1, h: 2.4, fontSize: 14, color: '1A1A1A', fontFace: 'Aptos', valign: 'top' }
   );
   const klanten = listFromField(profiel.belangrijkste_klanten_referenties);
   if (klanten.length) {
+    const klantRows = [['Nr.', 'Referentie'], ...klanten.slice(0, 10).map((naam, i) => [String(i + 1), naam])];
+    const klantOverflow = pptxOverflowRow(Math.min(10, klanten.length), klanten.length, 2);
+    if (klantOverflow) klantRows.push(klantOverflow);
     profielSlide.addTable(
-      pptxRows([['Nr.', 'Referentie'], ...klanten.slice(0, 10).map((naam, i) => [String(i + 1), naam])]),
+      pptxRows(klantRows),
       {
         x: 0.6,
         y: 3.5,
@@ -1096,11 +1146,14 @@ export async function generatePowerPointReport(data: ReportData): Promise<Buffer
   if (eisen.length === 0) {
     klantSlide.addText('Nog niet gegenereerd.', { x: 0.6, y: 1.2, w: 12, h: 1, fontSize: 16, color: heading, fontFace: 'Aptos' });
   } else {
+    const eisRows = [
+      ['Eis', 'Niveau', 'Status'],
+      ...eisen.slice(0, 10).map((e: any) => [String(e.eis || ''), String(e.niveau || ''), statusLabel(e.status)]),
+    ];
+    const eisOverflow = pptxOverflowRow(Math.min(10, eisen.length), eisen.length, 3);
+    if (eisOverflow) eisRows.push(eisOverflow);
     klantSlide.addTable(
-      pptxRows([
-        ['Eis', 'Niveau', 'Status'],
-        ...eisen.slice(0, 10).map((e: any) => [String(e.eis || ''), String(e.niveau || ''), statusLabel(e.status)]),
-      ]),
+      pptxRows(eisRows),
       { x: 0.5, y: 1.1, w: 12.3, colW: [7.5, 2.4, 2.4], border: { pt: 0.5, color: primary }, fontFace: 'Aptos', fontSize: 12, color: '1A1A1A' }
     );
   }
@@ -1350,9 +1403,14 @@ export async function generatePDFReport(data: ReportData): Promise<Buffer> {
     addText(`KvK-nummer: ${getValueOrString(profiel.kvk_nummer) || client.kvk || 'onbekend'}`);
     addText(`Plaats: ${getValueOrString(profiel.hoofdvestiging) || client.plaats || 'onbekend'}`);
     addText(`Activiteiten: ${listFromField(profiel.producten_diensten).join(', ') || 'onbekend'}`);
-    addText(`Afnemers: ${getValueOrString(profiel.afnemers_markten) || 'onbekend'}`);
-    addText(`Directie / eigenaren: ${getValueOrString(profiel.directie_eigenaren) || 'onbekend'}`);
-    addText(`LinkedIn: ${linkedinDisplay(profiel.linkedin)}`);
+    {
+      const afnemersPdf = getValueOrString(profiel.afnemers_markten);
+      if (!isUnknownDisplay(afnemersPdf)) addText(`Afnemers: ${afnemersPdf}`);
+      const directiePdf = getValueOrString(profiel.directie_eigenaren);
+      if (!isUnknownDisplay(directiePdf)) addText(`Directie / eigenaren: ${directiePdf}`);
+      const linkedinPdf = linkedinDisplay(profiel.linkedin);
+      if (!isUnknownDisplay(linkedinPdf)) addText(`LinkedIn: ${linkedinPdf}`);
+    }
     addHeading('Belangrijkste klanten / referenties', 13);
     const klanten = listFromField(profiel.belangrijkste_klanten_referenties);
     if (klanten.length) klanten.forEach((k, i) => addBullet(`${i + 1}. ${k}`));

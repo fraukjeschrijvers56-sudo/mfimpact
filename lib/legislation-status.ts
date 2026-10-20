@@ -56,8 +56,26 @@ export interface LegislationAssessment {
 const UNCERTAIN_RE =
   /onvoldoende gegevens|onbekend|niet ge[iï]dentificeerd|niet gevonden|niet bepaald|energieverbruik onbekend|geen producten ge[iï]dentificeerd|geen .+producten ge[iï]dentificeerd|n\/a|\bniet bekend\b/i;
 
-const EUDR_GOODS = ['soja', 'palmolie', 'rundvee', 'cacao', 'koffie', 'rubber', 'hout', 'cattle', 'palm oil'];
+const EUDR_GOODS = ['soja', 'palmolie', 'rundvee', 'cacao', 'koffie', 'rubber', 'hout', 'papier', 'cattle', 'palm oil', 'paper', 'wood'];
 const CBAM_GOODS = ['staal', 'aluminium', 'cement', 'kunstmest', 'waterstof', 'elektriciteit', 'steel', 'aluminum', 'fertilizer', 'hydrogen'];
+const EUDR_NEEDED =
+  'Nodig: worden EUDR-goederen (hout, papier, soja, palmolie, rubber, cacao, koffie, rundvee) of producten daarvan in de EU gebracht of geëxporteerd?';
+const FTE_OMZET_NEEDED = 'Nodig: aantal FTE en netto-omzet uit KvK/jaarrekening (laatste boekjaar)';
+
+/** 2-digit SBI prefixes that are demonstrably services (no EUDR commodity placing). */
+const PURE_SERVICE_SBI = new Set([
+  '62', '63',
+  '69', '70', '71', '72', '73', '74', '75',
+  '78', '82',
+  '85', '86', '87', '88',
+  '94', '96',
+]);
+
+const HARD_SOURCE_RE = /kvk|kamer van koophandel|jaarrekening|jaarverslag|annual accounts|annual report/i;
+const ESTIMATE_HOST_RE = /drimble|linkedin|creditsafe|graydon/i;
+const COMPANY_INFO_RE = /company\.info|companyinfo/i;
+const ESTIMATE_VALUE_RE = /\bca\.?\b|\bcirca\b|\bongeveer\b|\bschatting\b|\bestimate\b|\d+\s*[–\-]\s*\d+/i;
+const UNRELIABLE_VALIDATIE_RE = /niet_controleerbaar|\bonzeker\b/;
 
 const GOV_CLIENT_RE =
   /\b(gemeente|gemeenten|provincie|waterschap|rijksoverheid|rijk|ministerie|zbo|prorail|rijkswaterstaat|tender|aanbested|overheid|defensie|politie)\b/i;
@@ -85,6 +103,85 @@ function fieldBron(field: unknown): string | undefined {
   const bronnen = (field as { bronnen?: Array<{ url?: string; citaat?: string }> }).bronnen;
   if (!Array.isArray(bronnen) || bronnen.length === 0) return undefined;
   return bronnen[0]?.url || bronnen[0]?.citaat || undefined;
+}
+
+function looksLikeEstimateValue(raw: unknown): boolean {
+  const value = unwrap(raw);
+  return typeof value === 'string' && ESTIMATE_VALUE_RE.test(value);
+}
+
+function collectValidatie(field: unknown): string {
+  if (!field || typeof field !== 'object') return '';
+  const direct = String((field as { validatie?: string }).validatie || '');
+  const bronnen = (field as { bronnen?: Array<{ validatie?: string }> }).bronnen || [];
+  return [direct, ...bronnen.map((b) => b?.validatie || '')].filter(Boolean).join(' ').toLowerCase();
+}
+
+function collectSourceBlob(field: unknown, extra: string[] = []): string {
+  const parts = [...extra];
+  if (field && typeof field === 'object') {
+    const obj = field as { status?: string; toelichting?: string; bronnen?: Array<{ url?: string; citaat?: string; validatie?: string }> };
+    if (obj.status) parts.push(String(obj.status));
+    if (obj.toelichting) parts.push(String(obj.toelichting));
+    for (const bron of obj.bronnen || []) {
+      if (bron?.url) parts.push(bron.url);
+      if (bron?.citaat) parts.push(bron.citaat);
+    }
+  }
+  return parts.filter(Boolean).join(' ');
+}
+
+function editedPaths(client: any = {}, dossier: any = {}): string[] {
+  const raw = client?.edited_fields ?? dossier?.edited_fields ?? [];
+  if (Array.isArray(raw)) return raw.map(String);
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function isManuallyEntered(field: unknown, paths: string[], edited: string[]): boolean {
+  const status = fieldStatus(field);
+  if (/handmatig/.test(status)) return true;
+  return paths.some((p) => edited.some((e) => e === p || e.endsWith(`.${p}`) || e.includes(p)));
+}
+
+/** Official FTE/omzet: KvK, jaarrekening, or manual entry, and not an unreliable validation. */
+function isHardOfficialMetric(field: unknown, extraSources: string[], edited: boolean): boolean {
+  if (parseNumber(field) == null) return false;
+  if (UNRELIABLE_VALIDATIE_RE.test(collectValidatie(field))) return false;
+  if (looksLikeEstimateValue(field)) return false;
+  const blob = collectSourceBlob(field, extraSources);
+  if (ESTIMATE_HOST_RE.test(blob) && !edited) return false;
+  if (COMPANY_INFO_RE.test(blob) && /schatting|estimate|raming/i.test(blob) && !edited) return false;
+  return edited || HARD_SOURCE_RE.test(blob);
+}
+
+function extractSbiCodes(field: unknown, extra: string[] = []): { codes: string[]; source?: string } {
+  const blob = `${collectSourceBlob(field, extra)} ${String(unwrap(field) || '')}`;
+  const five = [...blob.matchAll(/\b(\d{5})\b/g)].map((m) => m[1]);
+  const dotted = [...blob.matchAll(/\b(\d{2}\.\d{2}\.?\d?)\b/g)].map((m) => m[1].replace(/\D/g, ''));
+  let codes = [...new Set([...five, ...dotted])];
+  if (!codes.length) {
+    codes = [...new Set([...blob.matchAll(/sbi[^0-9]{0,20}(\d{2})\b/gi)].map((m) => m[1]))];
+  }
+  codes = codes.filter((c) => {
+    const n = Number(c.slice(0, 2));
+    return n >= 1 && n <= 99 && !/^(19|20)\d{2}$/.test(c);
+  });
+  const official = fieldBron(field) || extra.find((s) => s && !isUncertainText(s));
+  const label = codes.length ? `SBI ${codes.join(' / ')}` : undefined;
+  return { codes, source: label || official };
+}
+
+function isPureServiceSbi(codes: string[]): boolean {
+  if (!codes.length) return false;
+  return codes.every((code) => PURE_SERVICE_SBI.has(code.slice(0, 2)));
 }
 
 function fieldStatus(field: unknown): string {
@@ -164,11 +261,15 @@ function triState(field: unknown): 'yes' | 'no' | 'unknown' {
 
 export interface LegislationFacts {
   fte: number | null;
+  fteHard: boolean;
   fteSource?: string;
   omzet: number | null;
+  omzetHard: boolean;
   omzetSource?: string;
   balanstotaal: number | null;
   sector: string;
+  sbiCodes: string[];
+  sbiSource?: string;
   products: string[];
   productsSource?: string;
   productsIdentified: boolean;
@@ -213,13 +314,23 @@ function extractFacts(client: any = {}, dossier: any = {}): LegislationFacts {
     [t.tender_titel, t.tender, t.opdrachtgever, t.eis_gesteld, t.eis].filter(Boolean).join(' ')
   );
 
+  const edited = editedPaths(client, dossier);
+  const fteEdited = isManuallyEntered(fteField, ['aantal_medewerkers', 'onderzoek.profiel.aantal_medewerkers'], edited);
+  const omzetEdited = isManuallyEntered(omzetField, ['omzet', 'onderzoek.profiel.omzet'], edited);
+  const sbiField = profiel.sbi ?? basis.sbi ?? client.sbi;
+  const sbi = extractSbiCodes(sbiField, [basis.sbi_source, String(unwrap(profiel.sbi) || ''), String(unwrap(basis.sbi) || '')]);
+
   return {
     fte: parseNumber(fteField),
-    fteSource: firstSource(fieldBron(profiel.aantal_medewerkers), fieldBron(basis), basis.aantal_medewerkers_source, 'KvK / jaarrekening'),
+    fteHard: isHardOfficialMetric(fteField, [basis.aantal_medewerkers_source, client.aantal_medewerkers_source], fteEdited),
+    fteSource: firstSource(fieldBron(profiel.aantal_medewerkers), basis.aantal_medewerkers_source, client.aantal_medewerkers_source),
     omzet: parseNumber(omzetField),
-    omzetSource: firstSource(fieldBron(profiel.omzet), basis.omzet_source),
+    omzetHard: isHardOfficialMetric(omzetField, [basis.omzet_source, client.omzet_source], omzetEdited),
+    omzetSource: firstSource(fieldBron(profiel.omzet), basis.omzet_source, client.omzet_source),
     balanstotaal: parseNumber(profiel.balanstotaal ?? basis.balanstotaal ?? client.balanstotaal),
     sector: String(unwrap(profiel.sector) || unwrap(basis.sector) || client.sector || ''),
+    sbiCodes: sbi.codes,
+    sbiSource: sbi.source,
     products,
     productsSource: firstSource(fieldBron(profiel.producten_diensten), basis.producten_source),
     productsIdentified: products.length > 0,
@@ -247,14 +358,6 @@ function matchesAny(texts: string[], re: RegExp): boolean {
 function goodsHit(products: string[], goods: string[]): string[] {
   const lower = products.map((p) => p.toLowerCase());
   return goods.filter((g) => lower.some((p) => p.includes(g)));
-}
-
-function looksLikeServicesOnly(products: string[], sector: string): boolean {
-  if (!products.length) return false;
-  const blob = `${products.join(' ')} ${sector}`.toLowerCase();
-  const service = /advies|consultancy|management|directievoering|ontwerp|ingenieurs|software|diensten|projectmanagement/;
-  const commodity = [...EUDR_GOODS, ...CBAM_GOODS].some((g) => blob.includes(g));
-  return service.test(blob) && !commodity;
 }
 
 export function analyzeClientTypes(facts: LegislationFacts): {
@@ -326,11 +429,10 @@ function assessAndThreshold(opts: {
     a == null ? opts.aLabel : null,
     b == null ? opts.bLabel : null,
   ].filter(Boolean) as string[];
-  const needed = `Nodig: ${missing.join(' en ')} uit KvK-uittreksel of jaarrekening om ${opts.category}-plicht te bepalen.`;
   return item(opts.id, opts.category, 'te_onderzoeken', ['Onvoldoende gegevens'], {
-    needed,
-    question: needed,
-    documentRequest: `KvK-uittreksel of laatste jaarrekening met ${missing.join(' en ')}`,
+    needed: FTE_OMZET_NEEDED,
+    question: FTE_OMZET_NEEDED,
+    documentRequest: `KvK-uittreksel of laatste jaarrekening met ${missing.join(' en ') || 'FTE en netto-omzet'}`,
     notes: opts.notes,
   });
 }
@@ -375,14 +477,14 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
   const csrd = assessAndThreshold({
     id: 'csrd',
     category: 'CSRD',
-    a: facts.fte,
-    b: facts.omzet,
+    a: facts.fteHard ? facts.fte : null,
+    b: facts.omzetHard ? facts.omzet : null,
     aMin: 1000,
     bMin: 450_000_000,
     aLabel: 'FTE',
     bLabel: 'netto-omzet',
-    aSource: facts.fteSource,
-    bSource: facts.omzetSource,
+    aSource: facts.fteHard ? facts.fteSource : undefined,
+    bSource: facts.omzetHard ? facts.omzetSource : undefined,
     notes: ['Na Omnibus I: >1000 FTE én netto-omzet >€450 mln. Beursgenoteerd MKB valt niet meer onder CSRD.'],
   });
   items.push(csrd);
@@ -405,10 +507,18 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
         { source: facts.fteSource, notes: ['Verkoopargument: VSME-rapportage is voldoende voor grote afnemers.'] }
       )
     );
-  } else {
+  } else if (facts.fteHard) {
     items.push(
       item('value_chain_cap', 'Value-chain cap', 'niet_van_toepassing', [`>1000 FTE (${facts.fte}): value-chain cap niet van toepassing`], {
         source: facts.fteSource,
+      })
+    );
+  } else {
+    items.push(
+      item('value_chain_cap', 'Value-chain cap', 'te_onderzoeken', ['FTE >1000 is niet uit KvK/jaarrekening bevestigd'], {
+        needed: FTE_OMZET_NEEDED,
+        question: FTE_OMZET_NEEDED,
+        documentRequest: 'KvK-uittreksel of jaarrekening met aantal medewerkers (FTE)',
       })
     );
   }
@@ -416,14 +526,14 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
   const csdddLegal = assessAndThreshold({
     id: 'csddd',
     category: 'CSDDD',
-    a: facts.fte,
-    b: facts.omzet,
+    a: facts.fteHard ? facts.fte : null,
+    b: facts.omzetHard ? facts.omzet : null,
     aMin: 5000,
     bMin: 1_500_000_000,
     aLabel: 'FTE',
     bLabel: 'netto-omzet',
-    aSource: facts.fteSource,
-    bSource: facts.omzetSource,
+    aSource: facts.fteHard ? facts.fteSource : undefined,
+    bSource: facts.omzetHard ? facts.omzetSource : undefined,
     notes: ['Na Omnibus: >5000 FTE én >€1,5 mrd omzet; toepassing vanaf 2029.'],
   });
   if (csdddLegal.status === 'niet_van_toepassing' && clients.largePrivate) {
@@ -448,42 +558,34 @@ export function assessLegislation(client: any = {}, dossier: any = {}): Legislat
   });
 
   const eudrHits = goodsHit(facts.products, EUDR_GOODS);
+  const eudrDoc = 'Product-/inkooplijst met EUDR-goederen (hout, papier, soja, palmolie, rubber, cacao, koffie, rundvee) of producten daarvan';
   if (facts.eudrSignal === 'yes' || eudrHits.length > 0) {
     items.push(
       item('eudr', 'EUDR', 'van_toepassing', [
         eudrHits.length ? `EUDR-goederen: ${eudrHits.join(', ')}` : 'Ketenrisico-signaal: wel EUDR-goederen',
       ], { source: facts.eudrSource || facts.productsSource })
     );
-  } else if (!facts.productsIdentified && facts.eudrSignal !== 'no') {
+  } else if (isPureServiceSbi(facts.sbiCodes)) {
     items.push(
-      item('eudr', 'EUDR', 'te_onderzoeken', ['Geen producten geïdentificeerd'], {
-        needed:
-          'Nodig: welke producten of grondstoffen (soja, palmolie, rundvee, cacao, koffie, rubber, hout) op de EU-markt worden gebracht?',
-        question:
-          'Nodig: welke producten of grondstoffen (soja, palmolie, rundvee, cacao, koffie, rubber, hout) op de EU-markt worden gebracht?',
-        documentRequest: 'Product-/inkooplijst met grondstoffen die onder EUDR vallen (soja, palmolie, rundvee, cacao, koffie, rubber, hout)',
-      })
+      item('eudr', 'EUDR', 'niet_van_toepassing', [
+        `SBI ${facts.sbiCodes.join(' / ')} is een dienstensector, geen EUDR-goederen`,
+      ], { source: facts.sbiSource })
     );
-  } else if (facts.eudrSignal === 'no' && facts.eudrSource) {
+  } else if (facts.eudrSignal === 'no' && facts.eudrSource && HARD_SOURCE_RE.test(facts.eudrSource)) {
     items.push(
       item('eudr', 'EUDR', 'niet_van_toepassing', ['Sector/producten vallen buiten EUDR-goederen'], {
         source: facts.eudrSource,
       })
     );
-  } else if (facts.productsIdentified && eudrHits.length === 0 && looksLikeServicesOnly(facts.products, facts.sector)) {
-    items.push(
-      item('eudr', 'EUDR', 'niet_van_toepassing', [
-        `Geïdentificeerde activiteiten (${facts.products.slice(0, 4).join(', ')}) zijn geen EUDR-goederen`,
-      ], { source: facts.productsSource })
-    );
   } else {
+    const reason = !facts.productsIdentified
+      ? 'Geen producten geïdentificeerd'
+      : 'Website-tekst alleen is onvoldoende om EUDR uit te sluiten';
     items.push(
-      item('eudr', 'EUDR', 'te_onderzoeken', ['Onvoldoende gegevens om EUDR-scope uit te sluiten'], {
-        needed:
-          'Nodig: welke producten of grondstoffen (soja, palmolie, rundvee, cacao, koffie, rubber, hout) op de EU-markt worden gebracht?',
-        question:
-          'Nodig: welke producten of grondstoffen (soja, palmolie, rundvee, cacao, koffie, rubber, hout) op de EU-markt worden gebracht?',
-        documentRequest: 'Product-/inkooplijst met grondstoffen die onder EUDR vallen',
+      item('eudr', 'EUDR', 'te_onderzoeken', [reason], {
+        needed: EUDR_NEEDED,
+        question: EUDR_NEEDED,
+        documentRequest: eudrDoc,
       })
     );
   }

@@ -82,7 +82,7 @@ export function KlanteisenSection({ clientId, dossier, wetgevingVragen = [] }: P
           </div>
         </div>
         <p className="text-emerald-100/70 italic mb-3">
-          Nog niet geanalyseerd. Klik op '↻ Vernieuw Klanteisen ophalen' om klanttypen te detecteren en eisen te matchen.
+          Nog niet geanalyseerd. Klik op '↻ Klanteisen ophalen' om klanttypen te detecteren en eisen te matchen.
         </p>
         <SectionMetadataBadge section="klanteisen" metadata={metadata} />
       </section>
