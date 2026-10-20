@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import MainLayout from '@/app/components/MainLayout';
-import { checkAllThresholds, ESG_DISCLAIMER, ESG_REFERENCE_DATE } from '@/lib/esg-thresholds';
+import { ESG_DISCLAIMER, ESG_REFERENCE_DATE } from '@/lib/esg-thresholds';
+import { assessLegislation } from '@/lib/legislation-status';
 import { nl, isUnknown, labelize, hostOf, isUrl } from '@/lib/format';
 import { extractDisplayValue, getDisplayText } from '@/lib/field-normalizer';
 import {
@@ -86,11 +87,7 @@ export function ProspectView({ client }: { client: any }) {
   const vsmeEntries = vsme && typeof vsme === 'object' ? Object.entries(vsme) : [];
   const vsmeAanwezig = vsmeEntries.filter(([, v]: any) => String(v?.status).toLowerCase() === 'aanwezig').length;
 
-  const fteNum = typeof client.aantal_medewerkers === 'number' ? client.aantal_medewerkers : undefined;
-  const omzetNum = typeof client.omzet === 'number' ? client.omzet : undefined;
-  const products: string[] = Array.isArray(basis?.producten) ? basis.producten : [];
-  const thresholds = checkAllThresholds({ aantal_medewerkers: fteNum, omzet: omzetNum, sector: client.sector || undefined, products });
-  const thresholdList = [thresholds.csrd, thresholds.valueChainCap, thresholds.csddd, thresholds.euTaxonomy, thresholds.eudr, thresholds.cbam, thresholds.nlEnergySaving, thresholds.co2Prestatieladder];
+  const legislation = assessLegislation(client, dossier);
 
   const nav = [
     ['profiel', 'Profiel'], ['klanteisen', 'Wat uw klanten gaan vragen'], ['vsme', 'VSME B1–B11'], ['ketenrisico', 'Ketenrisico & wetgeving'],
@@ -182,10 +179,14 @@ export function ProspectView({ client }: { client: any }) {
         <LinkedInCard clientId={client.id} data={profiel.linkedin} sectionMetadata={sectionMetadata} />
 
         {/* KLANTEISEN + GESPREK — one block: aanknopingspunten, agenda, aannames, vragen */}
-        <KlanteisenSection clientId={client.id} dossier={dossier} />
+        <KlanteisenSection clientId={client.id} dossier={dossier} wetgevingVragen={legislation.questions} />
 
         {/* NEXT STEPS remains a separate card */}
-        <NextStepsCard clientId={client.id} nextSteps={onderzoek?.gesprek?.next_steps} />
+        <NextStepsCard
+          clientId={client.id}
+          nextSteps={onderzoek?.gesprek?.next_steps}
+          documentRequests={legislation.documentRequests}
+        />
 
         {/* PROFIEL */}
         <SectionWrapper clientId={client.id} section="profiel" sectionMetadata={sectionMetadata} refreshLabel="Profiel">
@@ -250,19 +251,27 @@ export function ProspectView({ client }: { client: any }) {
             {ketenrisico ? <FieldGrid obj={ketenrisico} /> : <p className="text-slate-300 italic">onbekend</p>}
           </Section>
           <Section title="Wetgeving & drempels (indicatief)" icon={<Scale className="w-5 h-5" />}>
-            <p className="text-sm text-emerald-100/80 mb-3">MKB-categorie: <span className="font-semibold text-white">{nl(thresholds.mkbCategory.category)}</span> ({nl(thresholds.mkbCategory.reason)})</p>
+            <p className="text-sm text-emerald-100/80 mb-1">MKB-categorie: <span className="font-semibold text-white">{nl(legislation.mkbCategory.category)}</span> ({nl(legislation.mkbCategory.reason)})</p>
+            <p className="text-sm font-semibold text-white mb-3">{legislation.summary}</p>
             <ul className="space-y-2">
-              {thresholdList.map((t, i) => (
-                <li key={i} className="rounded-lg bg-emerald-900/40 border border-emerald-700/40 p-3">
+              {legislation.items.map((t) => (
+                <li key={t.id} className="rounded-lg bg-emerald-900/40 border border-emerald-700/40 p-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold text-white">{t.category}</span>
-                    <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-emerald-200 text-emerald-950">{t.status.replace(/_/g, ' ')}</span>
+                    <span
+                      className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded text-white"
+                      style={{ backgroundColor: t.color, color: t.status === 'te_onderzoeken' ? '#1A1A1A' : '#FFFFFF' }}
+                    >
+                      {t.label}
+                    </span>
                   </div>
-                  <p className="text-sm text-emerald-50/90">{t.reasons.join(' · ')}</p>
+                  <p className="text-sm text-emerald-50/90 mt-1">{t.reasons.join(' · ')}</p>
+                  {t.source && <p className="text-xs text-emerald-200/70 mt-1">Bron: {t.source}</p>}
+                  {t.needed && <p className="text-sm text-amber-100 mt-1">{t.needed}</p>}
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-emerald-200/70 mt-3">{ESG_DISCLAIMER} · peildatum {new Date(ESG_REFERENCE_DATE).toLocaleDateString('nl-NL')}</p>
+            <p className="text-xs text-emerald-200/70 mt-3">{legislation.disclaimer} · peildatum {legislation.referenceDate}</p>
           </Section>
         </div>
 

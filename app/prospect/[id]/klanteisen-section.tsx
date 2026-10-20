@@ -15,9 +15,10 @@ const VRAAG_CATEGORIES: Record<string, string> = {
 interface Props {
   clientId: number;
   dossier: any;
+  wetgevingVragen?: string[];
 }
 
-export function KlanteisenSection({ clientId, dossier }: Props) {
+export function KlanteisenSection({ clientId, dossier, wetgevingVragen = [] }: Props) {
   const onderzoek = dossier.onderzoek || dossier;
   const gesprek = onderzoek.gesprek || {};
   const kansenGesprek: string[] = Array.isArray(onderzoek.kansen_gesprek) ? onderzoek.kansen_gesprek : [];
@@ -51,6 +52,7 @@ export function KlanteisenSection({ clientId, dossier }: Props) {
 
   const hasGesprekContent =
     kansenGesprek.length > 0 ||
+    wetgevingVragen.length > 0 ||
     (Array.isArray(gesprek.agenda) && gesprek.agenda.length > 0) ||
     (Array.isArray(gesprek.aannames) && gesprek.aannames.length > 0) ||
     (gesprek.vragen && Object.values(gesprek.vragen).some((q: any) => Array.isArray(q) && q.length > 0));
@@ -412,34 +414,47 @@ export function KlanteisenSection({ clientId, dossier }: Props) {
           </div>
         )}
 
-        {gesprek.vragen && Object.keys(gesprek.vragen).some((k) => gesprek.vragen[k]?.length) && (
+        {(wetgevingVragen.length > 0 || (gesprek.vragen && Object.keys(gesprek.vragen).some((k) => gesprek.vragen[k]?.length))) && (
           <div className="rounded-xl bg-violet-950/60 border border-violet-600/40 p-5">
             <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
               <MessageCircle className="w-5 h-5" />
-              Vragen
+              Te stellen vragen
             </h3>
-            <div className="space-y-4">
-              {Object.entries(gesprek.vragen).map(([category, questions]: [string, any]) => {
-                if (!questions || !Array.isArray(questions) || questions.length === 0) return null;
-                return (
-                  <div key={category}>
-                    <h4 className="text-md font-semibold text-violet-200 mb-2">
-                      {VRAAG_CATEGORIES[category] || category}
-                    </h4>
-                    <ul className="space-y-1">
-                      {questions.map((q: string, idx: number) => (
-                        <li key={idx} className="text-sm text-violet-50 pl-4 before:content-['•'] before:mr-2">
-                          {q}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
+            {wetgevingVragen.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-md font-semibold text-amber-200 mb-2">Wetgeving & drempels</h4>
+                <ul className="space-y-1">
+                  {wetgevingVragen.map((q, idx) => (
+                    <li key={`w${idx}`} className="text-sm text-amber-50 pl-4 before:content-['•'] before:mr-2">
+                      {q}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {gesprek.vragen && Object.keys(gesprek.vragen).some((k) => gesprek.vragen[k]?.length) && (
+              <div className="space-y-4">
+                {Object.entries(gesprek.vragen).map(([category, questions]: [string, any]) => {
+                  if (!questions || !Array.isArray(questions) || questions.length === 0) return null;
+                  return (
+                    <div key={category}>
+                      <h4 className="text-md font-semibold text-violet-200 mb-2">
+                        {VRAAG_CATEGORIES[category] || category}
+                      </h4>
+                      <ul className="space-y-1">
+                        {questions.map((q: string, idx: number) => (
+                          <li key={idx} className="text-sm text-violet-50 pl-4 before:content-['•'] before:mr-2">
+                            {q}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
-
         <SectionMetadataBadge section="gesprek" metadata={sectionMetadata.gesprek} />
       </div>
     </section>

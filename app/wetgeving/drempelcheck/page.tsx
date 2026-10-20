@@ -94,53 +94,38 @@ export default function DrempelcheckPage() {
             </div>
 
             <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">
-                Direct van toepassing ({results.direct.length})
-              </h2>
-              {results.direct.length > 0 ? (
-                <div className="space-y-4">
-                  {results.direct.map((item: any) => (
-                    <div key={item.id} className="border-l-4 border-red-500 bg-red-50 p-4">
-                      <h3 className="font-semibold text-red-900">{item.naam}</h3>
-                      <p className="text-sm text-red-800 mt-1">{item.reason}</p>
-                      <p className="text-sm text-red-700 mt-2">
-                        <strong>Drempel:</strong> {item.drempels}
-                      </p>
+              <h2 className="text-xl font-semibold mb-2">Wetgeving & drempels</h2>
+              {results.summary && <p className="text-sm font-medium text-gray-800 mb-4">{results.summary}</p>}
+              <div className="space-y-3">
+                {(results.items || []).map((item: any) => (
+                  <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-semibold text-gray-900">{item.category || item.naam}</h3>
+                      <span
+                        className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded"
+                        style={{
+                          backgroundColor: item.color,
+                          color: item.status === 'te_onderzoeken' ? '#1A1A1A' : '#FFFFFF',
+                        }}
+                      >
+                        {item.label}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">
-                  Geen wetgeving is direct van toepassing op basis van de huidige bedrijfsgegevens.
-                </p>
-              )}
-            </div>
-
-            <div className="bg-white shadow rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">
-                Indirect van toepassing (via afnemers/keten) ({results.indirect.length})
-              </h2>
-              {results.indirect.length > 0 ? (
-                <div className="space-y-4">
-                  {results.indirect.map((item: any) => (
-                    <div key={item.id} className="border-l-4 border-orange-500 bg-orange-50 p-4">
-                      <h3 className="font-semibold text-orange-900">{item.naam}</h3>
-                      <p className="text-sm text-orange-800 mt-1">{item.doorwerking}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">
-                  Geen indirecte doorwerking geïdentificeerd.
-                </p>
-              )}
+                    <p className="text-sm text-gray-700 mt-1">
+                      {(item.reasons || []).join(' · ') || item.reason}
+                    </p>
+                    {item.source && <p className="text-xs text-gray-500 mt-1">Bron: {item.source}</p>}
+                    {item.needed && <p className="text-sm text-amber-800 mt-1">{item.needed}</p>}
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                <strong>Interpretatie:</strong> Deze drempelcheck is indicatief. Raadpleeg altijd de officiële 
-                bronnen en overweeg juridisch advies voor definitieve bepaling van toepasselijkheid. Items 
-                gemarkeerd als "Te verifiëren" in de database moeten extra worden gecontroleerd.
+                <strong>Interpretatie:</strong> {results.disclaimer || 'Indicatief, geen juridisch advies'}
+                {results.referenceDate ? ` · peildatum ${results.referenceDate}` : ''}.
+                Raadpleeg altijd de officiële bronnen voor definitieve bepaling van toepasselijkheid.
               </p>
             </div>
           </>

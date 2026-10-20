@@ -2,10 +2,19 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Edit2, Check, X, ChevronUp, ChevronDown } from 'lucide-react';
-import { DEFAULT_NEXT_STEPS } from '@/lib/default-next-steps';
+import { getDefaultNextSteps, type NextStep } from '@/lib/default-next-steps';
 
-export function NextStepsCard({ clientId, nextSteps: initialSteps }: { clientId: number; nextSteps: Array<{ stap: string; eigenaar: string; termijn: string }> | null }) {
-  const baseline = initialSteps && initialSteps.length > 0 ? initialSteps : DEFAULT_NEXT_STEPS;
+export function NextStepsCard({
+  clientId,
+  nextSteps: initialSteps,
+  documentRequests = [],
+}: {
+  clientId: number;
+  nextSteps: NextStep[] | null;
+  documentRequests?: string[];
+}) {
+  const hasSavedSteps = Array.isArray(initialSteps) && initialSteps.length > 0;
+  const baseline = hasSavedSteps ? initialSteps : getDefaultNextSteps(documentRequests);
   const [steps, setSteps] = useState(baseline);
   const [editing, setEditing] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ stap: '', eigenaar: '', termijn: '' });
@@ -86,7 +95,7 @@ export function NextStepsCard({ clientId, nextSteps: initialSteps }: { clientId:
       return;
     }
     const newSteps = [...steps];
-    newSteps[editing!] = editForm;
+    newSteps[editing!] = { ...steps[editing!], ...editForm };
     setSteps(newSteps);
     setEditing(null);
     setEditForm({ stap: '', eigenaar: '', termijn: '' });
@@ -138,6 +147,22 @@ export function NextStepsCard({ clientId, nextSteps: initialSteps }: { clientId:
       {dirty && (
         <div className="mb-3 rounded-lg border border-amber-500/60 bg-amber-950/70 px-3 py-2 text-sm text-amber-100">
           Niet-opgeslagen wijzigingen. Klik op Opslaan om ze te bewaren.
+        </div>
+      )}
+
+      {hasSavedSteps && documentRequests.length > 0 && (
+        <div className="mb-4 rounded-lg border border-sky-600/40 bg-sky-950/50 p-4">
+          <h3 className="text-sm font-bold text-sky-100 mb-2">Delen van informatie</h3>
+          <p className="text-xs text-sky-200/80 mb-2">
+            Op basis van openstaande wetgevingsvragen (niet-opgeslagen; overschrijft handmatige next steps niet):
+          </p>
+          <ul className="space-y-1">
+            {documentRequests.map((req, idx) => (
+              <li key={idx} className="text-sm text-sky-50 pl-4 before:content-['•'] before:mr-2">
+                {req}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -223,6 +248,15 @@ export function NextStepsCard({ clientId, nextSteps: initialSteps }: { clientId:
                     <span><strong>Eigenaar:</strong> {step.eigenaar}</span>
                     <span><strong>Termijn:</strong> {step.termijn}</span>
                   </div>
+                  {step.checklist && step.checklist.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {step.checklist.map((item, cidx) => (
+                        <li key={cidx} className="text-sm text-emerald-50 pl-4 before:content-['•'] before:mr-2">
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
                   <button

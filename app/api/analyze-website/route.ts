@@ -386,17 +386,28 @@ Geef in JSON formaat:
       }
 
       const client = db.prepare('SELECT * FROM clients WHERE id = ?').get(clientId) as any;
-      
+
       // Parse products from client data
       const products = client.afnemers?.split(',').map((p: string) => p.trim()) || [];
-      
-      const thresholds = checkAllThresholds({
-        aantal_medewerkers: client.aantal_medewerkers === 'onbekend' ? undefined : client.aantal_medewerkers,
-        omzet: client.omzet === 'onbekend' ? undefined : client.omzet,
-        balanstotaal: client.balanstotaal === 'onbekend' ? undefined : client.balanstotaal,
-        sector: client.sector,
-        products,
-      });
+      let dossier = client.dossier;
+      if (typeof dossier === 'string') {
+        try {
+          dossier = JSON.parse(dossier);
+        } catch {
+          dossier = {};
+        }
+      }
+
+      const thresholds = checkAllThresholds(
+        {
+          aantal_medewerkers: client.aantal_medewerkers === 'onbekend' ? undefined : client.aantal_medewerkers,
+          omzet: client.omzet === 'onbekend' ? undefined : client.omzet,
+          balanstotaal: client.balanstotaal === 'onbekend' ? undefined : client.balanstotaal,
+          sector: client.sector,
+          products,
+        },
+        dossier
+      );
 
       return NextResponse.json({ 
         success: true, 

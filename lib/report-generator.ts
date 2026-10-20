@@ -28,8 +28,16 @@ import PDFDocument from 'pdfkit';
 import path from 'path';
 import fs from 'fs';
 import { getValueOrString, hexColor, type HuisstijlSettings } from './huisstijl';
-import { DEFAULT_NEXT_STEPS } from './default-next-steps';
+import { getDefaultNextSteps, type NextStep } from './default-next-steps';
 import { loadReportLogo, logoDataUri } from './report-logo';
+import {
+  assessLegislation,
+  ESG_DISCLAIMER,
+  ESG_REFERENCE_DATE,
+  type LegislationAssessment,
+  type LegislationItem,
+  type LegislationStatus,
+} from './legislation-status';
 
 interface ReportData {
   client: any;
@@ -56,6 +64,7 @@ const VSME_TITLES: Record<string, string> = {
 const CHAPTERS = [
   '1. Managementsamenvatting',
   '2. Bedrijfsprofiel',
+  '2b. Wetgeving & drempels',
   '3. Wat uw klanten gaan vragen',
   '4. Scan & gatenanalyse VSME B1-B11',
   '5. Certificaten & registers',
@@ -105,16 +114,25 @@ function listFromField(field: any): string[] {
   return text.split(/\s*,\s*/).filter(Boolean);
 }
 
-function nextStepsOf(gesprek: any): Array<{ stap: string; eigenaar: string; termijn: string }> {
+function nextStepsOf(gesprek: any, documentRequests: string[] = []): NextStep[] {
   const steps = Array.isArray(gesprek?.next_steps) ? gesprek.next_steps : [];
   if (steps.length > 0) {
     return steps.map((step: any) =>
       typeof step === 'string'
         ? { stap: step, eigenaar: '', termijn: '' }
-        : { stap: step.stap || String(step), eigenaar: step.eigenaar || '', termijn: step.termijn || '' }
+        : { stap: step.stap || String(step), eigenaar: step.eigenaar || '', termijn: step.termijn || '', checklist: step.checklist }
     );
   }
-  return DEFAULT_NEXT_STEPS;
+  return getDefaultNextSteps(documentRequests);
+}
+
+function leftoverDocumentRequests(nextSteps: NextStep[], documentRequests: string[] = []): string[] {
+  const listed = new Set(nextSteps.flatMap((step) => step.checklist || []));
+  return documentRequests.filter((req) => req && !listed.has(req));
+}
+
+function statusContrast(status: LegislationStatus): string {
+  return status === 'te_onderzoeken' ? '1A1A1A' : 'FFFFFF';
 }
 
 function aanknopingspuntenOf(gesprek: any, klanteisen: any, onderzoek: any): string[] {
@@ -270,6 +288,7 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
   const logo = await loadReportLogo();
   const {
     client,
+    dossier,
     huisstijl,
     onderzoek,
     profiel,
@@ -285,6 +304,7 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
     primaryHex,
     tableShade,
   } = ctx;
+  const legislation = assessLegislation(client, dossier);
 
   const doc = new Document({
     styles: {
@@ -456,6 +476,7 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
 
           heading1('2. Bedrijfsprofiel'),
           ...generateBedrijfsprofiel(profiel, client, tableShade, primaryHex),
+          ...generateWetgeving(legislation, tableShade),
           new Paragraph({ children: [new PageBreak()] }),
 
           heading1('3. Wat uw klanten gaan vragen'),
@@ -475,11 +496,11 @@ export async function generateWordReport(data: ReportData): Promise<Buffer> {
           new Paragraph({ children: [new PageBreak()] }),
 
           heading1('7. Aanknopingspunten voor het gesprek'),
-          ...generateGesprek(gesprek, klanteisen, onderzoek),
+          ...generateGesprek(gesprek, klanteisen, onderzoek, legislation.questions),
           new Paragraph({ children: [new PageBreak()] }),
 
           heading1('8. Next steps'),
-          ...generateNextSteps(nextStepsOf(gesprek)),
+          ...generateNextSteps(nextStepsOf(gesprek, legislation.documentRequests), legislation.documentRequests),
           new Paragraph({ children: [new PageBreak()] }),
 
           heading1('9. Bronnenlijst'),
@@ -562,6 +583,47 @@ function generateBedrijfsprofiel(profiel: any, client: any, tableShade: string, 
     );
   }
 
+  return paragraphs;
+}
+
+function generateWetgeving(legislation: LegislationAssessment, tableShade: string): Array<Paragraph | Table> {
+  const paragraphs: Array<Paragraph | Table> = [
+    heading2('Wetgeving & drempels'),
+    bodyPara(legislation.summary, 120),
+  ];
+  const rows = [
+    new TableRow({
+      tableHeader: true,
+      children: [
+        tableCell('Wet', { bold: true, shade: '0C4643', color: 'FFFFFF' }),
+        tableCell('Status', { bold: true, shade: '0C4643', color: 'FFFFFF' }),
+        tableCell('Toelichting', { bold: true, shade: '0C4643', color: 'FFFFFF' }),
+      ],
+    }),
+    ...legislation.items.map(
+      (row, idx) =>
+        new TableRow({
+          children: [
+            tableCell(row.category, { shade: idx % 2 === 1 ? tableShade : 'FFFFFF' }),
+            tableCell(row.label, {
+              shade: row.color.replace('#', ''),
+              color: statusContrast(row.status),
+              bold: true,
+            }),
+            tableCell([row.reasons.join(' · '), row.needed, row.source ? `Bron: ${row.source}` : '']
+              .filter(Boolean)
+              .join(' — '), { shade: idx % 2 === 1 ? tableShade : 'FFFFFF' }),
+          ],
+        })
+    ),
+  ];
+  paragraphs.push(
+    new Table({
+      width: { size: 9360, type: WidthType.DXA },
+      rows,
+    })
+  );
+  paragraphs.push(bodyPara(`${legislation.disclaimer} · peildatum ${legislation.referenceDate}`, 120));
   return paragraphs;
 }
 
@@ -770,7 +832,7 @@ function generateClaimcheck(claims: any[], huisstijl: HuisstijlSettings): Paragr
   return paragraphs;
 }
 
-function generateGesprek(gesprek: any, klanteisen: any, onderzoek: any): Paragraph[] {
+function generateGesprek(gesprek: any, klanteisen: any, onderzoek: any, wetgevingVragen: string[] = []): Paragraph[] {
   const paragraphs: Paragraph[] = [];
   const punten = aanknopingspuntenOf(gesprek, klanteisen, onderzoek);
   paragraphs.push(heading2('Aanknopingspunten'));
@@ -799,40 +861,52 @@ function generateGesprek(gesprek: any, klanteisen: any, onderzoek: any): Paragra
       if (item.te_verifieren_vraag) paragraphs.push(bodyPara(`Vraag: ${item.te_verifieren_vraag}`, 120));
     });
   }
-  if (gesprek?.vragen && Object.keys(gesprek.vragen).length > 0) {
-    paragraphs.push(heading2('Vragen'));
-    Object.entries(gesprek.vragen).forEach(([category, questions]: [string, any]) => {
-      if (!Array.isArray(questions) || questions.length === 0) return;
-      paragraphs.push(
-        new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          spacing: { before: 160, after: 80 },
-          children: [new TextRun({ text: category.replace(/_/g, ' ') })],
-        })
-      );
-      questions.forEach((q: string) => paragraphs.push(bulletPara(q)));
-    });
+  const heeftGesprekVragen =
+    gesprek?.vragen && Object.keys(gesprek.vragen).some((k: string) => Array.isArray(gesprek.vragen[k]) && gesprek.vragen[k].length);
+  if (wetgevingVragen.length || heeftGesprekVragen) {
+    paragraphs.push(heading2('Te stellen vragen'));
+    wetgevingVragen.forEach((q) => paragraphs.push(bulletPara(q)));
+    if (heeftGesprekVragen) {
+      Object.entries(gesprek.vragen).forEach(([category, questions]: [string, any]) => {
+        if (!Array.isArray(questions) || questions.length === 0) return;
+        paragraphs.push(
+          new Paragraph({
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 160, after: 80 },
+            children: [new TextRun({ text: category.replace(/_/g, ' ') })],
+          })
+        );
+        questions.forEach((q: string) => paragraphs.push(bulletPara(q)));
+      });
+    }
   }
   return paragraphs;
 }
 
-function generateNextSteps(nextSteps: Array<{ stap: string; eigenaar: string; termijn: string }>): Paragraph[] {
-  return nextSteps.map(
-    (step, idx) =>
-      new Paragraph({
-        spacing: { after: 140 },
-        children: [
-          new TextRun({ text: `${idx + 1}. `, bold: true, font: 'Aptos', size: 22 }),
-          new TextRun({ text: step.stap, font: 'Aptos', size: 22 }),
-          new TextRun({
-            text: step.eigenaar || step.termijn ? ` (${[step.eigenaar, step.termijn].filter(Boolean).join(', ')})` : '',
-            font: 'Aptos',
-            size: 20,
-            italics: true,
-          }),
-        ],
-      })
-  );
+function generateNextSteps(nextSteps: NextStep[], documentRequests: string[] = []): Paragraph[] {
+  const paragraphs: Paragraph[] = nextSteps.flatMap((step, idx) => {
+    const head = new Paragraph({
+      spacing: { after: step.checklist?.length ? 60 : 140 },
+      children: [
+        new TextRun({ text: `${idx + 1}. `, bold: true, font: 'Aptos', size: 22 }),
+        new TextRun({ text: step.stap, font: 'Aptos', size: 22 }),
+        new TextRun({
+          text: step.eigenaar || step.termijn ? ` (${[step.eigenaar, step.termijn].filter(Boolean).join(', ')})` : '',
+          font: 'Aptos',
+          size: 20,
+          italics: true,
+        }),
+      ],
+    });
+    const checks = (step.checklist || []).map((item) => bulletPara(item));
+    return [head, ...checks];
+  });
+  const leftover = leftoverDocumentRequests(nextSteps, documentRequests);
+  if (leftover.length) {
+    paragraphs.push(heading2('Delen van informatie'));
+    leftover.forEach((req) => paragraphs.push(bulletPara(req)));
+  }
+  return paragraphs;
 }
 
 function generateBronnenlijst(bronnen: string[]): Paragraph[] {
@@ -845,7 +919,8 @@ function generateDisclaimer(): Paragraph[] {
     bodyPara(
       'Dit rapport is opgesteld door MF Impact op basis van publiek beschikbare informatie en is bedoeld als indicatief overzicht. De informatie is zorgvuldig verzameld, maar MF Impact kan geen garantie bieden voor volledigheid of juistheid. Dit rapport vormt geen juridisch advies. Alle beoordelingen zijn indicatief.'
     ),
-    bodyPara(`Peildatum: ${formatDateDutch()}`),
+    bodyPara(`${ESG_DISCLAIMER} · peildatum ${ESG_REFERENCE_DATE}`),
+    bodyPara(`Rapportagedatum: ${formatDateDutch()}`),
   ];
 }
 
@@ -877,7 +952,8 @@ function addContentHeader(slide: PptxGenJS.Slide, title: string, huisstijl: Huis
 export async function generatePowerPointReport(data: ReportData): Promise<Buffer> {
   const ctx = extractContext(data);
   const logo = await loadReportLogo();
-  const { client, huisstijl, onderzoek, profiel, vsme, certificaten, claims, gaten, klanteisen, gesprek, bronnen, mvoRegister } = ctx;
+  const { client, dossier, huisstijl, onderzoek, profiel, vsme, certificaten, claims, gaten, klanteisen, gesprek, bronnen, mvoRegister } = ctx;
+  const legislation = assessLegislation(client, dossier);
   const primary = huisstijl.primary_color.replace('#', '');
   const heading = (huisstijl.heading_color || huisstijl.secondary_color).replace('#', '');
   const tableShade = (huisstijl.table_shade || '#F4F7F7').replace('#', '');
@@ -970,6 +1046,50 @@ export async function generatePowerPointReport(data: ReportData): Promise<Buffer
     );
   }
 
+  const wetSlide = pptx.addSlide();
+  addContentHeader(wetSlide, '2b. Wetgeving & drempels', huisstijl, logo);
+  wetSlide.addText(legislation.summary, {
+    x: 0.5,
+    y: 0.95,
+    w: 12.3,
+    h: 0.35,
+    fontSize: 13,
+    bold: true,
+    color: heading,
+    fontFace: 'Aptos',
+  });
+  wetSlide.addTable(
+    [
+      [
+        { text: 'Wet', options: { bold: true, color: 'FFFFFF', fill: { color: '0C4643' } } },
+        { text: 'Status', options: { bold: true, color: 'FFFFFF', fill: { color: '0C4643' } } },
+        { text: 'Toelichting', options: { bold: true, color: 'FFFFFF', fill: { color: '0C4643' } } },
+      ],
+      ...legislation.items.map((row: LegislationItem) => [
+        { text: row.category },
+        {
+          text: row.label,
+          options: {
+            bold: true,
+            color: statusContrast(row.status),
+            fill: { color: row.color.replace('#', '') },
+          },
+        },
+        { text: [row.reasons.join(' · '), row.needed, row.source ? `Bron: ${row.source}` : ''].filter(Boolean).join(' — ') },
+      ]),
+    ],
+    { x: 0.4, y: 1.35, w: 12.5, colW: [2.8, 2.6, 7.1], border: { pt: 0.4, color: primary }, fontFace: 'Aptos', fontSize: 10, color: '1A1A1A' }
+  );
+  wetSlide.addText(`${legislation.disclaimer} · peildatum ${legislation.referenceDate}`, {
+    x: 0.5,
+    y: 7.05,
+    w: 12.3,
+    h: 0.25,
+    fontSize: 10,
+    color: heading,
+    fontFace: 'Aptos',
+  });
+
   const klantSlide = pptx.addSlide();
   addContentHeader(klantSlide, '3. Wat uw klanten gaan vragen', huisstijl, logo);
   const eisen = klanteisen.eisen || [];
@@ -1058,7 +1178,11 @@ export async function generatePowerPointReport(data: ReportData): Promise<Buffer
   Object.entries(gesprek.vragen || {}).forEach(([, questions]) => {
     if (Array.isArray(questions)) questions.forEach((q: string) => agendaLines.push(`Vraag: ${q}`));
   });
-  agendaSlide.addText(agendaLines.length ? agendaLines.map((l) => `• ${l}`).join('\n') : 'Nog geen agenda of vragen gegenereerd.', {
+  const vraagLines = [
+    ...legislation.questions.map((q) => `Wetgeving: ${q}`),
+    ...agendaLines,
+  ];
+  agendaSlide.addText(vraagLines.length ? vraagLines.map((l) => `• ${l}`).join('\n') : 'Nog geen agenda of vragen gegenereerd.', {
     x: 0.6,
     y: 1.2,
     w: 12.1,
@@ -1071,11 +1195,17 @@ export async function generatePowerPointReport(data: ReportData): Promise<Buffer
 
   const nextSlide = pptx.addSlide();
   addContentHeader(nextSlide, '8. Next steps', huisstijl, logo);
+  const pptxNext = nextStepsOf(gesprek, legislation.documentRequests);
+  const pptxLeftover = leftoverDocumentRequests(pptxNext, legislation.documentRequests);
   nextSlide.addText(
-    nextStepsOf(gesprek)
-      .map((s, i) => `${i + 1}. ${s.stap} (${[s.eigenaar, s.termijn].filter(Boolean).join(', ')})`)
-      .join('\n'),
-    { x: 0.6, y: 1.2, w: 12.1, h: 5.4, fontSize: 16, fontFace: 'Aptos', color: '1A1A1A', valign: 'top' }
+    [
+      ...pptxNext.map((s, i) => {
+        const checks = (s.checklist || []).map((c) => `   • ${c}`).join('\n');
+        return `${i + 1}. ${s.stap} (${[s.eigenaar, s.termijn].filter(Boolean).join(', ')})${checks ? `\n${checks}` : ''}`;
+      }),
+      ...(pptxLeftover.length ? ['', 'Delen van informatie:', ...pptxLeftover.map((r) => `• ${r}`)] : []),
+    ].join('\n'),
+    { x: 0.6, y: 1.2, w: 12.1, h: 5.4, fontSize: 14, fontFace: 'Aptos', color: '1A1A1A', valign: 'top' }
   );
 
   const bronSlide = pptx.addSlide();
@@ -1115,6 +1245,16 @@ export async function generatePowerPointReport(data: ReportData): Promise<Buffer
     align: 'center',
     fontFace: 'Aptos',
   });
+  close.addText(`${legislation.disclaimer} · peildatum ${legislation.referenceDate}`, {
+    x: 0.8,
+    y: 5.7,
+    w: 11.7,
+    h: 0.4,
+    fontSize: 12,
+    color: heading,
+    align: 'center',
+    fontFace: 'Aptos',
+  });
   close.addShape('rect' as any, { x: 0, y: 7.38, w: 13.33, h: 0.12, fill: { color: primary } });
 
   return (await pptx.write({ outputType: 'nodebuffer' })) as Buffer;
@@ -1130,7 +1270,8 @@ function pdfFontPaths() {
 export async function generatePDFReport(data: ReportData): Promise<Buffer> {
   const ctx = extractContext(data);
   const logo = await loadReportLogo();
-  const { client, huisstijl, onderzoek, profiel, vsme, certificaten, claims, gaten, klanteisen, gesprek, bronnen, mvoRegister } = ctx;
+  const { client, dossier, huisstijl, onderzoek, profiel, vsme, certificaten, claims, gaten, klanteisen, gesprek, bronnen, mvoRegister } = ctx;
+  const legislation = assessLegislation(client, dossier);
   const headingColor = huisstijl.heading_color || huisstijl.secondary_color || '#0C4643';
   const primaryColor = huisstijl.primary_color || '#039088';
   const fonts = pdfFontPaths();
@@ -1218,6 +1359,26 @@ export async function generatePDFReport(data: ReportData): Promise<Buffer> {
     else addText('Geen referenties gevonden.');
 
     doc.addPage();
+    addHeading('2b. Wetgeving & drempels', 18);
+    addText(legislation.summary);
+    legislation.items.forEach((row: LegislationItem) => {
+      const y = doc.y;
+      const badge = row.label;
+      doc.font(headingFont).fontSize(9);
+      const badgeWidth = Math.max(110, doc.widthOfString(badge) + 12);
+      doc.save();
+      doc.rect(50, y, badgeWidth, 14).fill(row.color);
+      doc.fillColor(`#${statusContrast(row.status)}`).text(badge, 56, y + 2, { width: badgeWidth - 8, lineBreak: false });
+      doc.restore();
+      doc.font(headingFont).fontSize(11).fillColor(headingColor).text(row.category, 50 + badgeWidth + 10, y, { lineBreak: false });
+      doc.y = y + 18;
+      addText(row.reasons.join(' · '));
+      if (row.source) addText(`Bron: ${row.source}`);
+      if (row.needed) addText(row.needed);
+    });
+    addText(`${legislation.disclaimer} · peildatum ${legislation.referenceDate}`);
+
+    doc.addPage();
     addHeading('3. Wat uw klanten gaan vragen', 18);
     const eisen = klanteisen.eisen || [];
     if (!eisen.length) addText('Nog niet gegenereerd.');
@@ -1261,12 +1422,23 @@ export async function generatePDFReport(data: ReportData): Promise<Buffer> {
       addHeading('Agenda', 13);
       gesprek.agenda.forEach((item: any) => addBullet(`${item.punt || item} (${item.minuten ?? ''} min)`));
     }
+    if (legislation.questions.length) {
+      addHeading('Te stellen vragen', 13);
+      legislation.questions.forEach((q) => addBullet(q));
+    }
 
     doc.addPage();
     addHeading('8. Next steps', 18);
-    nextStepsOf(gesprek).forEach((step, idx) => {
+    const pdfNext = nextStepsOf(gesprek, legislation.documentRequests);
+    pdfNext.forEach((step, idx) => {
       addText(`${idx + 1}. ${step.stap} (${[step.eigenaar, step.termijn].filter(Boolean).join(', ')})`);
+      (step.checklist || []).forEach((item) => addBullet(item));
     });
+    const pdfLeftover = leftoverDocumentRequests(pdfNext, legislation.documentRequests);
+    if (pdfLeftover.length) {
+      addHeading('Delen van informatie', 13);
+      pdfLeftover.forEach((req) => addBullet(req));
+    }
 
     doc.addPage();
     addHeading('9. Bronnenlijst', 18);
@@ -1278,7 +1450,8 @@ export async function generatePDFReport(data: ReportData): Promise<Buffer> {
     addText(
       'Dit rapport is opgesteld door MF Impact op basis van publiek beschikbare informatie en is bedoeld als indicatief overzicht. De informatie is zorgvuldig verzameld, maar MF Impact kan geen garantie bieden voor volledigheid of juistheid. Dit rapport vormt geen juridisch advies. Alle beoordelingen zijn indicatief.'
     );
-    addText(`Peildatum: ${formatDateDutch()}`);
+    addText(`${legislation.disclaimer} · peildatum ${legislation.referenceDate}`);
+    addText(`Rapportagedatum: ${formatDateDutch()}`);
 
     const range = doc.bufferedPageRange();
     const pageCount = range.count;

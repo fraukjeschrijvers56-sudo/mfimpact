@@ -1,9 +1,10 @@
 /**
  * ESG Threshold Configuration Module (stand oktober 2026, Omnibus I verwerkt)
- * 
- * Centralized configuration for CSRD, CSDDD, EUDR, CBAM, and other ESG regulatory thresholds.
- * UI MOET TONEN: "Indicatief, geen juridisch advies" + peildatum veld
+ *
+ * Status decisions live in lib/legislation-status.ts (pure, dossier-based).
+ * This file keeps the historical per-law helpers and a compatibility wrapper.
  */
+import { assessLegislation } from './legislation-status';
 
 export const ESG_REFERENCE_DATE = '2026-10-16';
 export const ESG_DISCLAIMER = 'Indicatief, geen juridisch advies';
@@ -272,20 +273,48 @@ export function checkMKBCategory(data: CompanyData): {
 /**
  * Run all threshold checks for a company
  */
-export function checkAllThresholds(data: CompanyData) {
-  const mkbCategory = checkMKBCategory(data);
-  
+/**
+ * @deprecated Use assessLegislation(client, dossier) from lib/legislation-status.ts.
+ * Kept so older callers still run; missing data now maps to te_onderzoeken.
+ */
+export function checkAllThresholds(data: CompanyData, dossier?: any) {
+  const assessment = assessLegislation(
+    {
+      aantal_medewerkers: data.aantal_medewerkers,
+      omzet: data.omzet,
+      balanstotaal: data.balanstotaal,
+      sector: data.sector,
+      energy_kwh: data.energy_kwh,
+      gas_m3: data.gas_m3,
+      import_volume_ton: data.import_volume_ton,
+    },
+    dossier || {
+      onderzoek: {
+        profiel: {
+          producten_diensten: { waarde: data.products || [] },
+          sector: { waarde: data.sector },
+          aantal_medewerkers: { waarde: data.aantal_medewerkers },
+          omzet: { waarde: data.omzet },
+        },
+        extra: {
+          energy_kwh: data.energy_kwh,
+          gas_m3: data.gas_m3,
+          import_volume_ton: data.import_volume_ton,
+        },
+      },
+    }
+  );
+  const byId = Object.fromEntries(assessment.items.map((i) => [i.id, i]));
   return {
-    mkbCategory,
-    csrd: checkCSRD(data),
-    valueChainCap: checkValueChainCap(data),
-    csddd: checkCSDDD(data),
-    euTaxonomy: checkEUTaxonomy(data),
-    eudr: checkEUDR(data),
-    cbam: checkCBAM(data),
-    nlEnergySaving: checkNLEnergySaving(data),
-    co2Prestatieladder: checkCO2Prestatieladder(data),
-    referenceDate: ESG_REFERENCE_DATE,
-    disclaimer: ESG_DISCLAIMER,
+    ...assessment,
+    mkbCategory: assessment.mkbCategory,
+    csrd: byId.csrd,
+    valueChainCap: byId.value_chain_cap,
+    csddd: byId.csddd,
+    euTaxonomy: byId.eu_taxonomie,
+    eudr: byId.eudr,
+    cbam: byId.cbam,
+    nlEnergySaving: byId.energiebesparingsplicht,
+    co2Prestatieladder: byId.co2_prestatieladder,
   };
 }
